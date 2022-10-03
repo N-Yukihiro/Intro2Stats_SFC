@@ -12,7 +12,7 @@ ggplot2パッケージは重ね書きです.
 ggplot()関数で白(グレー)の下地を用意します.
     
 ```{r}
-p_load(ggplot2)
+pacman::p_load(ggplot2)
 ggplot()
 ```
 
