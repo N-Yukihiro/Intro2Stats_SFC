@@ -250,7 +250,7 @@ ggplot(data = diamonds) +
 
 ### データの無作為抽出
 
--   `dplyr::sample_n()`関数を利用してデータの無作為抽出を行う
+-   `dplyr::slice_sample()`関数を利用してデータの無作為抽出を行う
 -   `diamonds`データからサイズ100のサンプルを非復元抽出(`replace = FALSE`)し, `ss`というオブジェクトに格納する
 -   無作為抽出の際に疑似乱数を利用しているので, 乱数の種を指定して結果を再現できるようにする
     -   `withr`パッケージの`with_seed()`関数を利用
@@ -259,9 +259,9 @@ ggplot(data = diamonds) +
 ```{r}
 p_load(withr)
 ss <- withr::with_seed(2718,
-                       dplyr::sample_n(tbl     = diamonds, 
-                                       size    = 100, 
-                                       replace = FALSE))
+                       dplyr::slice_sample(diamonds, 
+                                           n       = 100, 
+                                           replace = FALSE))
 ```
 
 ### 標本の概要を確認
@@ -305,9 +305,9 @@ ggplot(data = ss) +
 p_load(purrr)
 ms <- with_seed(2718,
                 purrr::rerun(.n = 1000,
-                             sample_n(tbl     = diamonds,
-                                      size    = 500,
-                                      replace = FALSE)))
+                             slice_sample(diamonds,
+                                          n       = 500,
+                                          replace = FALSE)))
 ```
 
 ### 各標本の標本平均を求める
