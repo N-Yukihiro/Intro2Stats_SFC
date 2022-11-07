@@ -1,6 +1,6 @@
 ---
 title: "母集団と標本"
-output: html_notebook
+format: html
 ---
 
 # R演習
