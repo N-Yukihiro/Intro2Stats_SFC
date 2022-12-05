@@ -1,0 +1,327 @@
+---
+title: "信頼区間, 仮説検定"
+format: html
+---
+
+# 分析結果の見方
+
+### データの読み込み
+
+- 『家計調査』2017年11月、第2−6表「年間収入階級別1世帯当たり1か月間の収入と支出」から作成した所得階級と支出のデータ`kakei201709_l18.csv`を用いる[^url]
+
+- 月間消費支出(円)(`CONS`), 月間消費支出(1万円)(`CONS1`), 年間収入(1万円)(INC), 有業人員(人)(`WORK`)
+    - いずれも調査世帯の平均値
+
+```{r}
+library(pacman)
+p_load(readr, here)
+kakei <- readr::read_csv(here("data", "kakei201709_l18.csv"))
+```
+
+### 回帰分析の実行
+
+- 応答変数を`CONS1`, 説明変数を`INC`として単回帰分析を行う
+
+```{r}
+res <- lm(CONS1 ~ INC, data = kakei)
+```
+
+### 結果の表示
+
+- `jtools`パッケージを利用して回帰分析の結果を表示する
+
+```{r}
+p_load(jtools)
+summ(res)
+```
+
+### 結果の読み方
+
+- 下方の表に推定結果がまとめられている
+    - Est.(回帰係数)は以前紹介した通り
+- S.E.の列に標準誤差が示される
+    - おおよそ$\pm 2$倍して(正確な値は信頼区間)0を跨がなければ符号が変わらないのでその変数は意味が有る(有意)と言える
+- t val.にt値が示される
+    - 回帰係数が0でないかどうかを検定した場合のt値
+    - 回帰係数が0であるという帰無仮説が棄却できるかを検証
+- 最後の列のpにp値が示される
+    - 帰無仮説が正しい(回帰係数が0である)と仮定した場合に, 分析したデータが得られる確率($P(D|H_0)$)
+    - 事前に有意水準($\alpha$)を事前に設定し, それを下回るか否かで判断
+    - p値の大きさによって星をつけたり, 小さいほどよいという解釈をしたりすることは本来のNeyman-Pearson流の考え方ではない
+
+### 信頼区間の示し方
+
+- 回帰係数の95%信頼区間を表示するには, `summ(coefint =
+TRUE)`を指定する
+    - S.E.の代わりに信頼区間の下限と上限が示される
+    - 信頼区間が0をまたいでいなければ符号が変わらず有意な変数だと言える
+    - `ci.width`という引数で信頼係数(信頼区間の幅)を変えることができる
+    - 指定をしない場合はデフォルトで95%信頼区間となる
+    - 有意水準と信頼係数は表裏の関係にあるため, 有意水準に合わせて信頼係数を変更する
+
+```{r}
+summ(res, 
+     confint  = TRUE, 
+     ci.width = .95)
+```
+
+### t値の求め方
+
+- t値は回帰係数を標準誤差で除することで求めることができる
+
+```{r}
+res$coefficients[2] / summary(res)$coefficients[2, 2]
+all.equal(summary(res)$coefficients[2, 1] /
+            summary(res)$coefficients[2, 2],
+          summary(res)$coefficients[2, 3])
+```
+
+### p値
+
+- p値は帰無仮説が正しい場合に分析したデータが得られる確率
+- t分布からt値が得られる確率を求める
+    - 両側検定のため2倍する
+
+```{r}
+p_load(magrittr)
+summary(res)$coefficients[2, 3] |>
+  pt(df = 16, lower.tail = FALSE) |> 
+  multiply_by(2)
+summary(res)$coefficients[2, 4]
+```
+
+### p値のグラフ化
+
+- t分布を描いて直感的にp値を捉える
+
+```{r}
+p_load(ggplot2)
+ggplot(data = NULL) +
+  aes(xmin = -30,
+      xmax = 30) +
+  stat_function(fun  = dt,
+                args = list(df = 16)) +
+  geom_vline(xintercept = 24) +
+  geom_vline(xintercept = -24)
+```
+
+# シミュレーションによる理解
+
+## データの準備
+
+### データの準備
+
+- 本日の演習ではシミュレーションデータを用いる
+- 母集団としてサイズが100万で平均2, 分散4の正規分布に従う説明変数のデータを作成する
+    - 応答変数は定数項が2, 回帰係数は3とする
+
+```{r}
+p_load(withr, dplyr, tibble)
+pop <- with_seed(
+  2718,
+  tibble(
+    x = rnorm(n    = 1000000,
+              mean = 2, sd = 4)) |> 
+    mutate(y = 2 + 3 * x + rnorm(n = 1000000)))
+```
+
+### 母集団のデータの概要
+
+- 母集団のデータの概要を確認する
+
+```{r}
+summary(pop)
+```
+
+### 母集団の回帰係数
+
+
+- 母集団を作成した際に利用した係数と推定された回帰係数は一致する
+
+```{r}
+pop_lm <- lm(y ~ x, data = pop)
+summ(pop_lm)
+```
+
+### 別の母集団の準備
+
+- 説明変数の効果の小さな母集団も用意する
+
+```{r}
+pop2 <- with_seed(
+  2718,
+  tibble(
+    x = rnorm(n    = 1000000,
+              mean = 2, sd = 4)) |> 
+    mutate(y = 2 + 0.1 * x + rnorm(n  = 1000000,
+                                   sd = 5)))
+```
+
+### 別の母集団のデータの概要
+
+- 母集団のデータの概要を確認する
+
+```{r}
+summary(pop2)
+```
+
+### 別の母集団の回帰係数
+
+- 母集団を作成した際に利用した係数と推定された回帰係数は一致する
+
+```{r}
+pop_lm2 <- lm(y ~ x, data = pop2)
+summ(pop_lm2)
+```
+
+## サンプルサイズと回帰係数
+
+### 標本による回帰
+  
+  - 標本としてサイズが5, 10, 30, 100, 1000, 5000のデータを無作為抽出し, 回帰分析を行う
+- `confint()`を利用して回帰係数の95%信頼区間を得る
+
+```{r}
+p_load(purrr)
+sample_lm <- with_seed(
+  2718,
+  list(5, 10, 30, 100, 1000, 5000) |> 
+    purrr::map(~ dplyr::slice_sample(pop,
+                                     n = .x)) |>
+    purrr::set_names(5, 10, 30, 100, 1000, 5000) |> 
+    purrr::map(~ lm(y ~ x, data = .x)) |> 
+    purrr::map_dfr(~ confint(.x,
+                             parm = "x") |> 
+                     as_tibble(),
+                   .id = "size"))
+```
+
+### 標本による回帰結果の図示
+
+- 結果を確認するときちんと95%信頼区間の範囲内に真値があることがわかる
+
+```{r}
+sample_lm |> 
+  rename(low = 2, high = 3) |> 
+  mutate(estimate = (low + high) / 2) |> 
+  mutate(size = as.numeric(size) |> 
+           as.factor()) |> 
+  ggplot() +
+  geom_point() +
+  aes(x = size,
+      y = estimate) +
+  geom_errorbar(aes(x    = size, 
+                    ymin = low,
+                    ymax = high), 
+                width = .2) +
+  geom_hline(yintercept = 3,
+             linetype   = "dashed")
+```
+
+## サンプルサイズと回帰係数(回帰係数の小さい場合)
+
+### 標本による回帰
+  
+  - 標本としてサイズが5, 10, 30, 100, 1000, 5000のデータを無作為抽出し, 回帰分析を行う
+- `confint()`を利用して回帰係数の95%信頼区間を得る
+
+```{r}
+sample_lm2 <- with_seed(
+  2718,
+  list(5, 10, 30, 100, 1000, 5000) |> 
+    purrr::map(~ dplyr::slice_sample(pop2,
+                                     n = .x)) |>
+    purrr::set_names(5, 10, 30, 100, 1000, 5000) |> 
+    purrr::map(~ lm(y ~ x, data = .x)) |> 
+    purrr::map_dfr(~ confint(.x,
+                             parm = "x") |> 
+                     as_tibble(),
+                   .id = "size"))
+```
+
+### 標本による回帰結果の図示
+
+- 結果を確認するときちんと95%信頼区間の範囲内に真値があることがわかる
+- 説明変数の効果が小さい場合, サンプルサイズが小さいと帰無仮説を棄却できない
+
+```{r}
+sample_lm2 |> 
+  rename(low = 2, high = 3) |> 
+  mutate(estimate = (low + high) / 2) |> 
+  mutate(size = as.numeric(size) |> 
+           as.factor()) |> 
+  ggplot() +
+  geom_point() +
+  aes(x = size,
+      y = estimate) +
+  geom_errorbar(aes(x    = size, 
+                    ymin = low,
+                    ymax = high), 
+                width = .2) +
+  geom_hline(yintercept = 0.1,
+             linetype   = "dashed") +
+  geom_hline(yintercept = 0,
+             colour     = "red")
+```
+
+## 信頼区間の意味
+
+### モンテカルロ・シミュレーション
+  
+- 初めに作った母集団からサイズ300の標本を1000個作成し, xの回帰係数の95%信頼区間を求める
+- 信頼区間に真値(母集団の係数)を含むか否かのダミー変数を作成する
+
+```{r}
+sim_data <- with_seed(
+  2718,
+  rerun(.n = 1000,
+        slice_sample(pop,
+                     n = 300)) |> 
+    map(~ lm(y ~ x, data = .x)) |>
+    purrr::set_names(1:1000) |> 
+    map_dfr(~ confint(.x, parm = "x") |> 
+              as_tibble()) |> 
+    rename(low = 1, high = 2) |> 
+    mutate(estimate = (low + high) / 2) |> 
+    mutate(TF = if_else(
+      low < pop_lm$coefficients[2] &
+        high > pop_lm$coefficients[2],
+      1, 0))) 
+```
+
+### 真値を含む割合
+  
+- 真値を含む割合は, 約95%に収束する
+
+```{r}
+sim_data |> 
+  summarise(TF        = mean(TF),
+            conf_low  = mean(low),
+            estimate  = mean(estimate),
+            conf_high = mean(high))
+```
+
+### 95%信頼区間を図示
+
+- 作成データからさらに100個抽出し, 95%信頼区間をプロットする
+
+```{r}
+with_seed(
+  2718,
+  sim_data |> 
+    mutate(TF = as.factor(TF)) |> 
+    slice_sample(n = 100) |> 
+    mutate(number = row_number())) |> 
+    ggplot() +
+    aes(x      = number, 
+        y      = estimate, 
+        colour = TF) +
+  geom_point() +
+  geom_errorbar(aes(ymin = low, 
+                    ymax = high), 
+                width = .2) +
+  geom_hline(
+    yintercept = pop_lm$coefficients[2],
+    linetype   = "dashed", 
+    colour     = "black")
+```
