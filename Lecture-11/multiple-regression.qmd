@@ -1,0 +1,394 @@
+---
+title: "重回帰分析"
+format: html
+---
+
+# Multiple Linear Regression
+
+## 重回帰分析の実行
+
+### データの読み込み
+- 『家計調査』2017年11月、第2−6表「年間収入階級別1世帯当たり1か月間の収入と支出」から作成した所得階級と支出のデータ`kakei201709_l18.csv`を用いる[^url]
+
+- 月間消費支出(円)(`CONS`), 月間消費支出(1万円)(`CONS1`), 年間収入(1万円)(INC), 有業人員(人)(`WORK`)
+    - いずれも調査世帯の平均値
+
+```{r}
+library(pacman)
+p_load(here, readr)
+kakei <- readr::read_csv(here("data", "kakei201709_l18.csv"))
+```
+
+### ペアプロット
+
+- いくつかの変数をまとめて散布図を描くには, `GGally`パッケージの`ggpairs()`関数が便利
+    - 右上(upper)にはピアソンの積率相関係数を示し, 対角線(diag)には密度などを表してくれる
+
+```{r}
+p_load(GGally)
+ggpairs(kakei)
+```
+
+### 最尤推定
+
+- 最尤推定法を利用するには, `glm()`関数を利用する
+    - 確率密度関数の分布族として正規分布(ガウス分布)を利用することを`family = "gaussian"`で宣言する
+- 説明変数を増やして重回帰分析とするには, 説明変数を`+`でつなぐ
+    - 最小二乗法を行う`lm()`関数でも同じ
+
+```{r}
+model1 <- glm(CONS1 ~ INC, 
+              family = "gaussian", data = kakei)
+model2 <- glm(CONS1 ~ INC + WORK, 
+              family = "gaussian", data = kakei)
+model3 <- glm(CONS1 ~ WORK, 
+              family = "gaussian", data = kakei)
+ols1   <- lm(CONS1 ~ INC, 
+             data = kakei)
+```
+
+## 結果の表示
+
+### 結果の表示
+
+- `jtools`パッケージの`summ()`関数を利用して結果を確認する
+    - 最尤推定法は正規分布以外も利用できるため, より汎用的な$R^2$などが計算されるが, 今回は線形回帰分析であるため割愛
+    - 最終行に$\hat{\sigma}^2$も計算される
+
+```{r}
+p_load(jtools)
+summ(model2)
+```
+
+### 標準回帰係数の算出
+
+- 標準回帰係数を算出するには, `scale_mod(scale.response = TRUE)`を利用する
+
+```{r}
+summ(scale_mod(model2,
+               scale.response = TRUE))
+```
+
+### 複数の分析結果を並べる
+
+- 複数の分析結果を並べるのには`stargazer`は有用
+
+```{r}
+p_load(stargazer)
+stargazer(model1, model2, model3,
+          type              = "text",
+          style             = "all", 
+          ci                = TRUE,
+          star.cutoffs      = NA, 
+          omit.table.layout = 'n',
+          align             = TRUE)
+```
+
+
+### AICによるモデル間の比較
+
+- `AIC()`関数を用いて、モデル推定結果を比較できる
+
+```{r}
+AIC(model1, model2, model3)
+```
+
+### BICによるモデル間の比較
+
+- `BIC()`関数を用いて、モデル推定結果を比較できる
+
+```{r}
+BIC(model1, model2, model3)
+```
+
+## 結果の図示
+
+### 結果の図示
+
+- 回帰分析の結果は表だけでなく, グラフ化するとわかりやすい
+- 結果のグラフ化には`coefplot`パッケージの`coefplot()`関数が便利
+
+```{r}
+p_load(coefplot)
+coefplot(model2)
+```
+
+### 結果の図示2
+
+- 定数項は基準が違うために一緒にプロットすると見づらい場合がある
+    - `intercept = FALSE`を引数に入れれば定数項を表示しない
+
+```{r}
+coefplot(model2,
+         intercept = FALSE)
+```
+
+### 複数のモデルを比較
+
+- 複数のモデルをグラフを用いて比較するには, `coefplot`パッケージの`multiplot()`関数が便利
+
+```{r}
+multiplot(model1, 
+          model2, 
+          model3)
+```
+
+### 標準回帰係数のプロット
+
+- 標準回帰係数へは`arm`パッケージの`standardize(standardize.y = TRUE)`で変換できる
+
+```{r}
+coefplot(
+  arm::standardize(model2,
+                   standardize.y = TRUE))
+```
+
+### 標準回帰係数のマルチプロット
+
+- 標準回帰係数へは`arm`パッケージの`standardize(standardize.y = TRUE)`で変換すれば, マルチプロットもできる
+
+```{r}
+multiplot(
+  arm::standardize(model1,
+                   standardize.y = TRUE),
+  arm::standardize(model2,
+                   standardize.y = TRUE),
+  arm::standardize(model3,
+                   standardize.y = TRUE),
+  names = c("model1", "model2", "model3"))
+```
+
+## 予測
+
+### 予測値の算出
+
+- `predict()`関数を利用して予測値を算出する
+
+```{r}
+p_load(dplyr)
+pred1 <- predict(model1)
+pred2 <- predict(model2)
+pred3 <- predict(model3)
+```
+
+### 予測値と実測値のプロット
+
+- 予測値と実測値のプロットを行う
+
+```{r}
+p_load(ggplot2)
+ggplot() +
+  aes(x = kakei$CONS1) +
+  geom_point(aes(y = pred1),
+             colour = "blue") +
+  geom_point(aes(y = pred2),
+             colour = "red") +
+  geom_point(aes(y = pred3),
+             colour = "green") +
+  geom_abline(slope     = 1, 
+              intercept = 0)
+```
+
+### 予測(新しい説明変数のデータセットを作成)
+
+- データを予測するため, まずは新しい説明変数のデータセットを作成する
+    - データの列名は分析に利用したものと同じ名前, 同じ列数である必要性がある
+    - 簡単のため, 単回帰で行うが重回帰でも問題なく予測できる
+
+```{r}
+new_dat <- data.frame(
+  INC = seq(from       = 50,
+            to         = 2050,
+            length.out = 20)
+)
+```
+
+### 区間推定
+
+- データを予測するためには, `predict()`関数を利用する
+    - 第1引数に回帰分析の結果のオブジェクト, `newdata`に新しい説明変数のデータフレーム, `interval`に求めたい区間, `level`に$100(1 - \alpha)\%$区間の値を指定する
+    - `interval = "confidence"`で信頼区間が, `interval = "prediction"`で予測区間が求められる
+
+```{r}
+ci <- predict(ols1, 
+              newdata  = new_dat, 
+              interval = "confidence",
+              level    = 0.95)
+ci <- bind_cols(new_dat, ci)
+pred <- predict(ols1, 
+                newdata  = new_dat, 
+                interval = "prediction",
+                level    = 0.95)
+pred <- bind_cols(new_dat, pred)
+```
+
+### 予測区間の図示
+
+- データの散布図に予測区間を図示する
+
+```{r}
+ggplot() +
+  aes(x = INC) +
+  geom_point(
+    data = kakei,
+    aes(y = CONS1)) +
+  geom_smooth(
+    data   = kakei,
+    aes(y = CONS1),
+    method = "lm",
+    se     = FALSE) +
+  geom_ribbon(
+    data     = pred,
+    aes(ymin = lwr,
+        ymax = upr),
+    fill     = "lightblue",
+    alpha    = 0.5)
+```
+
+### `geom_smooth()`と区間
+
+- `geom_smooth()`関数を利用するとデフォルトでは回帰直線とともに, 区間が表示されている
+- これは回帰直線の信頼区間
+
+```{r}
+ggplot(data = kakei) +
+  aes(x = INC,
+      y = CONS1) +
+  geom_point() +
+  geom_smooth(
+    method = "lm"
+  )
+```
+
+### 回帰直線の信頼区間
+
+- `predict(interval = "confidence")`で推定した値と`geom_smooth(se = TRUE)`は一致する
+
+```{r}
+ggplot() +
+  aes(x = INC) +
+  geom_point(
+    data = kakei,
+    aes(y = CONS1)) +
+  geom_smooth(
+    data   = kakei,
+    aes(y = CONS1),
+    method = "lm",
+    se     = FALSE) +
+  geom_ribbon(
+    data     = ci,
+    aes(ymin = lwr,
+        ymax = upr),
+    fill     = "lightblue",
+    alpha    = 0.5)
+```
+
+### LOOCV
+
+- LOOCV(leave-one-out cross-validation, 1個抜き交差検証法)
+    - 1つだけ分析用のデータから除外し, 残りのデータでモデルを作成し, 除外したデータを予測する
+    - これをデータの数だけ繰り返す
+
+- 予測の精度を予測値と実測値との差の2乗の平均の平方根$\frac{1}{N}\sqrt{\sum_i^N(\hat{y}^{(i)}- y_i)^2}$や差の絶対値の平均$\frac{1}{N}\sum_i^N|\hat{y}^{(i)}- y_i|$の指標がよく用いられる
+
+- 予測値と実測値の相関係数を2乗して決定係数が求められることもある
+
+### LOOCVの計算
+
+- `caret`パッケージを利用してLOOCVを求める
+
+```{r}
+p_load(caret)
+LOOCV1 <- train(CONS1 ~ INC, 
+                data      = kakei,
+                method    = "lm", 
+                trControl = trainControl(method = "LOOCV"))
+LOOCV1
+```
+
+- `caret`パッケージを利用してLOOCVを求める
+
+```{r}
+LOOCV2 <- train(CONS1 ~ INC + WORK, 
+                data      = kakei,
+                method    = "lm", 
+                trControl = trainControl(method = "LOOCV"))
+LOOCV2
+```
+
+- `caret`パッケージを利用してLOOCVを求める
+
+```{r}
+LOOCV3 <- train(CONS1 ~ WORK, 
+                data      = kakei,
+                method    = "lm", 
+                trControl = trainControl(method = "LOOCV"))
+LOOCV3
+```
+
+
+## 分析結果のチェック
+
+### 残差と予測値のプロット
+
+- 残差プロットをするためには, `ggfortify`パッケージと`autoplot()`関数を利用するのが便利
+- x軸が予測値, y軸が残差
+
+```{r}
+p_load(ggfortify)
+autoplot(model2, 
+         which = 1, 
+         ncol  = 1)
+```
+
+### 残差の平方根プロット
+
+- 残差の変動を確認するため, x軸が予測値, y軸が標準化した残差の絶対値の平和根の散布図を描く
+
+```{r}
+autoplot(model2, 
+         which = 3, 
+         ncol  = 1)
+```
+
+### 残差の正規Q-Qプロット
+
+- 残差の正規Q-Qプロットで直線状に標準化した残差が乗っているかチェックする
+
+```{r}
+autoplot(model2, 
+         which = 2,
+         ncol  = 1)
+```
+
+### 標準化残差とてこ比のプロット
+
+- x軸にてこ比, y軸に標準化残差を描画する
+
+```{r}
+autoplot(model2,
+         which = 5,
+         ncol  = 1)
+```
+
+### てこ比とCookの距離のプロット
+
+- x軸にてこ比, y軸にCookの距離を設定し, 散布図を描く
+
+```{r}
+autoplot(model2, 
+         which = 6, 
+         ncol  = 1)
+```
+
+### 多重共線性のチェック
+
+- 多重共線性のチェックのため, VIFを計算する
+- VIFの計算には, `car`パッケージの`vif()`関数を利用する
+- VIFが10以下であれば問題ない
+    - 2以下が理想だとする意見もある
+
+```{r}
+p_load(car)
+car::vif(model2)
+```
