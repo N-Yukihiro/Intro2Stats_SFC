@@ -1,0 +1,275 @@
+---
+title: "e-statを利用した統計分析"
+format: html
+---
+
+# Today's Practice
+
+### 今日の演習の目標
+
+- e-stat APIを利用できるようになる
+- e-stat APIを使って分析ができるようになる
+
+# e-Stat API
+
+### e-Stat
+
+- e-Stat(https://www.e-stat.go.jp/) は, 日本の統計が閲覧できる政府統計ポータルサイト
+- 国勢調査をはじめ, 多くの統計調査の結果が掲載されている
+- しかしながら, 公開される統計情報は表示に特化され, 分析しやすい形ではない
+
+### e-Stat API
+
+- e-Statが提供するAPI(Application Programming Interface)
+- API機能とは, e-Statからの特定データを手作業によることなく, 自動で取得することが可能になる機能
+- XML, JSON, CSVなどによってデータが提供される
+- 利用には登録が必要
+
+# estatapi
+
+### estatapi
+
+- `estatapi`は, e-Stat APIを利用するためのパッケージ
+- 以下の4つの機能をサポート
+    - 統計表情報取得: 提供されている統計表を検索
+    - メタ情報取得: 統計データのメタ情報を取得
+    - 統計データ取得: 統計データを取得
+    - データカタログ情報取得: 統計表ファイル(Excel, CSV, PDF)および統計データベースの情報を取得
+
+### appIdの利用
+
+- まず, e-statで先ほど作成したIDを変数として格納する
+
+```{r}
+appId <- "各自のappId"
+```
+
+### 統計表情報取得(`estat_getStatsList`)
+
+- どのような統計表が提供されているのか検索するには, `estat_getStatsList`を利用する
+- キーワードを含む統計を検索するには, `searchWord`に指定する
+- 特に`STATISTICS_NAME`や`TITLE`に注目し, `@id`が何かを確認する
+- 検索する際には, `View`を用いて視覚的に探しても良いし, `dplyr::filter`などを利用しても良い
+
+###
+
+```{r}
+library(pacman)
+p_load(estatapi, dplyr)
+estat_getStatsList(appId      = appId,
+                   searchWord = "人口") |> 
+  head()
+```
+
+### メタ情報取得(`estat_getMetaInfo`)
+
+- 統計データのメタ情報取得するには, `estat_getMetaInfo`を利用し, - statsDataIdにIDを指定する
+- ここでは2021年の都道府県別5歳階級別人口推計データ(0003448237)のメタ情報を取得する
+- 結果はlist形式で返される
+    - listの各要素がdata frameになっている
+
+```{r}
+meta_info <- estat_getMetaInfo(appId       = appId, 
+                               statsDataId = "0003448237")
+meta_info |> names()
+```
+
+###
+
+- `cat**`に様々な属性情報が含まれている
+
+```{r}
+meta_info$cat01
+meta_info$cat02
+```
+
+###
+
+```{r}
+meta_info$cat03
+meta_info$area
+meta_info$time
+```
+
+### 統計データ取得(`estat_getStatsData`)
+
+- 統計データ取得には, `estat_getStatsData`を利用する
+- 必ず指定しなければならない引数は, `appId`と`statsDataId`
+- しかし, データが大きくなりすぎる場合がある
+    - `cdCat**`などを利用して, データを絞ることも必要
+- 男女総数かつ総人口, 人口総数もしくは65歳以上の人口に絞って取得する
+
+```{r}
+df <- estat_getStatsData(
+  appId       = appId, 
+  statsDataId = "0003448237", 
+  cdCat01     = "000",
+  cdCat02     = c("01000", "01014", "01015", 
+                  "01016", "01017", "04018"),
+  cdCat03     = "001")
+```
+
+# データの整形
+
+### 列の選択
+
+- データの整形には`dplyr`パッケージを利用する
+- 必要のない列が多いので, 必要な列のみを選択する
+- 列を選択するには, `dplyr::select`を利用する
+
+```{r}
+df <- dplyr::select(df, 5, 6, 9, 10, 14)
+```
+
+### 行の選択
+
+- 次に, データから全国のデータを取り除く
+- データを取り除くには`dplyr::filter`を利用する
+
+```{r}
+df <- dplyr::filter(df, area_code != "00000") |> 
+  filter(time_code == "1301")
+```
+
+###
+
+- 人口総数のデータと5歳階級別65歳以上人口のデータに分ける
+
+```{r}
+df_all <- dplyr::filter(df, cat02_code == "01000")
+df_65  <- dplyr::filter(df, cat02_code != "01000")
+```
+
+### データの集約
+
+- 5歳階級別65歳以上人口のデータから都道府県別65歳以上人口の合計を求める
+
+```{r}
+df_65 <- df_65 |> 
+  dplyr::group_by(area_code) |> 
+  dplyr::summarise(pop_65 = sum(value))
+```
+
+### データの結合
+
+- データフレーム同士を列をキーにして結合するには, `dplyr::left_join`を利用する
+
+```{r}
+df2 <- dplyr::left_join(df_all, df_65,
+                        key = "area_code")
+```
+
+### 新しい列の作成
+
+- 新しい列を作成するには, `dplyr::mutate`を利用する
+- 65歳以上人口と総人口から高齢化率を求める
+
+```{r}
+df2 <- mutate(df2, 
+              aged_ratio = pop_65 / value)
+```
+
+# 分析
+
+### ヒストグラム
+
+- 都道府県別高齢化率のヒストグラムを描画する
+
+```{r}
+p_load(ggplot2)
+ggplot(df2) +
+  aes(x = aged_ratio) +
+  geom_histogram()
+```
+
+### 散布図
+
+- 都道府県別高齢化率と総人口の散布図を描画する
+
+```{r}
+ggplot(df2) +
+  aes(x = value,
+      y = aged_ratio) +
+  geom_point()
+```
+
+### 回帰分析
+
+- 高齢化率を結果変数に, 総人口を説明変数にして回帰分析を行う
+- なお, この分析は参考のために行っており, 因果関係を求めるものではない
+
+```{r}
+df_lm <- lm(aged_ratio ~ value,
+            data = df2)
+```
+
+### 結果の表示
+
+- 分析の結果をきれいに表示するには, `stargazer`を利用する
+
+```{r}
+p_load(stargazer)
+stargazer(df_lm,
+          type              = "text", 
+          style             = "all",
+          ci                = TRUE,
+          star.cutoffs      = NA,
+          omit.table.layout = 'n',
+          align             = TRUE)
+```
+
+### 回帰係数の図示
+
+- `coefplot`パッケージの`coefplot()`関数を利用して推定された係数を図示する
+
+```{r}
+p_load(coefplot)
+coefplot(df_lm)
+```
+
+### 散布図に回帰直線を加える
+
+- 散布図に回帰直線と信頼区間を加える
+
+```{r}
+df2 |> 
+  ggplot() +
+  aes(x = value, 
+      y = aged_ratio) + 
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+# Appendix
+
+### 統計データを少しだけ取得する
+
+- 統計データを少しだけ取得するためには, 取得数を`limit`で制限する
+
+```{r}
+df_limit <- estat_getStatsData(
+  appId       = appId, 
+  statsDataId = "0003448237", 
+  limit       = 5)
+```
+
+### ダウンロードしたファイルの読み込み
+
+- 実はこれでもきれいな形にはなりきっていない
+- 非表示の列や行があるため
+- 問題があれば読み込みで対処する
+
+```{r}
+p_load(readxl, here)
+df_xl <- readxl::read_excel(here("data",
+                                 "a01000.xls"),
+                            skip = 2) |> 
+  dplyr::select(-c(1:6))
+```
+
+###
+
+```{r}
+df_xl |> 
+  head()
+```
