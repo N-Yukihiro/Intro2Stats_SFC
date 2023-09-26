@@ -3,6 +3,21 @@ title: "Let’s Using R"
 format: html
 ---
 
+### Quarto
+
+`#`を使ったコメントよりも長い文章とともにコードを書きたい場合はQuartoファイルがおすすめです.
+皆さんが開いているこのファイルがQuartoファイルです.
+Quartoファイルの上部を少し設定するだけで簡単にhtmlファイルやpdfファイルが作成できます.
+
+以下の範囲に書かれたコードがRのコードとして認識されます.
+`{}`内を変更すればR以外の言語も実行できます.
+
+```{r}
+# code
+```
+
+右上の実行ボタンもしくは`ctrl + Enter`や`command + Enter`で実行できます.
+
 ### 作業ディレクトリの指定
 
 現在の作業ディレクトリ(フォルダ)を確認するためには`getwd()`関数を利用します.
@@ -12,7 +27,7 @@ getwd()
 ```
 
 任意のディレクトリを指定するためには, `setwd()`関数を利用します.
-ここでは移動するディレクトリがないので, #をつけてRを実行しないようにしています.
+ここでは移動するディレクトリがないので, `#`をつけてRを実行しないようにしています.
 
 ```{r}
 #setwd("ここにパスを打ち込む")
@@ -21,8 +36,8 @@ getwd()
 ### 新しいディレクトリ(フォルダ)の作成
 
 新しいディレクトリ(フォルダ)を作成するためには`dir.create()`関数を利用します.
-ここでは, dataという名前の新しいディレクトリを作成します.
-このnotobook上で新しいディレクトリを作成するとこのnotobookがあるディレクトリにフォルダが作成されます.
+ここでは, `data`という名前の新しいディレクトリを作成します.
+このquarto上で新しいディレクトリを作成するとこのqmdファイルがあるディレクトリにフォルダが作成されます.
 
 ```{r}
 dir.create("data")
@@ -31,7 +46,7 @@ dir.create("data")
 ### ディレクトリの内容を確認
 
 現在のディレクトリにきちんと新しいフォルダが作成できたか確認してみましょう.
-作業ディレクトリ内のファイルやフォルダを確認するには, list.files()関数を利用します.
+作業ディレクトリ内のファイルやフォルダを確認するには, `list.files()`関数を利用します.
 
 ```{r}
 list.files()
@@ -41,7 +56,7 @@ list.files()
 
 パッケージのインストールをしてみましょう.
 CRANに登録されたパッケージをインストールするには, `install.packages()`関数を利用します.
-すでにtidyverseパッケージをインストールしている方は実行する必要はありません.
+すでに`tidyverse`パッケージをインストールしている方は実行する必要はありません.
 
 ```{r}
 install.packages("dplyr")
@@ -78,8 +93,8 @@ p_load(dplyr, readr, ggplot2)
 ### `here`パッケージ
 
 データの場所を指定するのに便利なhereパッケージを利用してみましょう.
-hereパッケージは, プロジェクト(.Rproj)を起点にデータがどこにあるのかOSに関わらず同様に記述できます.
-here()関数の引数として, フォルダ名とファイル名をそれぞれダブルクオーテーションで囲み, カンマで繋いであげましょう.
+`here`パッケージは, プロジェクト(.Rproj)を起点にデータがどこにあるのかOSに関わらず同様に記述できます.
+`here()`関数の引数として, フォルダ名とファイル名をそれぞれダブルクオーテーションで囲み, カンマで繋いであげましょう.
 
 ```{r}
 p_load(here)
@@ -90,8 +105,8 @@ here()
 ### HELPの利用
 
 パッケージや関数の利用についてわからないことがあればHELPを利用してみましょう.
-HELPの出し方は?を知りたい関数やパッケージ名の前につけるだけです.
-?を2個つける(??)と単語検索のように利用できます.
+HELPの出し方は`?`を知りたい関数やパッケージ名の前につけるだけです.
+?を2個つける(`??`)と単語検索のように利用できます.
 
 ```{r}
 ?library
@@ -102,8 +117,8 @@ HELPの出し方は?を知りたい関数やパッケージ名の前につける
 ### 四則演算
 
 簡単な四則演算を行ってみましょう.
-*は掛け算, /は割り算を示します.
-数学と同じく()内は優先して評価されます.
+`*`は掛け算, `/`は割り算を示します.
+数学と同じく`()`内は優先して評価されます.
 
 ```{r}
 1 + 2 * 3 / 4
@@ -113,13 +128,13 @@ HELPの出し方は?を知りたい関数やパッケージ名の前につける
 ### 関数を利用した計算
 
 関数を利用した計算をしてみましょう.
-exp()関数はネイピア数$e$を底とし, 引数を指数として計算します.
-sqrt()関数は$\sqrt{}$を表しています.
-log()関数は自然対数であり, 2を底とするときはlog2(), 10を底とするときはlog10()を利用します.
-^は累乗, 10E04は100,000をそれぞれ表しています.
+`exp()`関数はネイピア数$e$を底とし, 引数を指数として計算します.
+`sqrt()`関数は$\sqrt{}$を表しています.
+`log()`関数は自然対数であり, 2を底とするときは`log2()`, 10を底とするときは`log10()`を利用します.
+`^`は累乗, `10E04`は100,000をそれぞれ表しています.
 
 ```{r}
-exp(2) * 10 ^ 2 ;
+exp(2) * 10^2 ;
 sqrt(2) * 10E04
 log(2)
 ```
@@ -127,9 +142,9 @@ log(2)
 ### 数値をオブジェクトに格納する
 
 数値をオブジェクトに格納して計算してみましょう.
-<-は左側の名前のオブジェクトに右側の要素を代入することを示しています.
-=でも構いませんが, Rではよく<-が利用されます.
-sum()関数は, 引数を足し合わせる関数です.
+`<-`は左側の名前のオブジェクトに右側の要素を代入することを示しています.
+`=`でも構いませんが, Rではよく`<-`が利用されます.
+`sum()`関数は, 引数を足し合わせる関数です.
 
 ```{r}
 x <- 3
@@ -141,11 +156,11 @@ sum(x, y)
 また, オブジェクトは, 単一の数値だけでなく, ベクトルや行列, データフレームを格納できます.
 他にも, いくつかの動作を関数として格納したり, 式などを格納することもできます.
 
-c()は数値などを連結するコンバイン関数です.
-:はstart:endとなっており, startからendまでの公差を1とする等差数列を作成します.
+`c()`は数値などを連結するコンバイン関数です.
+`:`は`start:end`となっており, startからendまでの公差を1とする等差数列を作成します.
 
 ```{r}
-a <- c(1,2,3)
+a <- c(1, 2, 3)
 b <- 4:6
 a / b
 ```
@@ -153,19 +168,19 @@ a / b
 ### データフレームの作成
 
 実際にデータフレームを作成してみましょう.
-rep()関数は要素を複製する関数です.
+`rep()`関数は要素を複製する関数です.
 
 ```{r}
 c <- 1:10
 d <- c * 2
-e <- c(rep("aa",3),rep("bb",4), rep("cc",3))
+e <- c(rep("aa",3), rep("bb",4), rep("cc",3))
 f <- data.frame(y = c, x = d, cha = e)
 ```
 
 ### 変数名の確認
 
 そのオブジェクトがどのような変数によって構成されているか確認してみましょう.
-変数名を確認するためには, names()を利用
+変数名を確認するためには, `names()`を利用します.
 
 ```{r}
 names(f)
@@ -174,11 +189,11 @@ names(f)
 ### 先頭から数行を表示
 
 オブジェクトを先頭から数行を表示してみましょう.
-先頭行から6行分表示するためには, head()を利用します.
+先頭行から6行分表示するためには, `head()`を利用します.
 
-head(x, n = 5L)などとn = 5Lのように表示する行数を指定できます.
-第2引数に指定する場合はn =は省略可能です.
-なお, 5LのLは, 5が整数であることを示しています.
+`head(x, n = 5L)`などと`n = 5L`のように表示する行数を指定できます.
+第2引数に指定する場合は`n =`は省略可能です.
+なお, `5L`の`L`は, 5が整数であることを示しています.
 
 ```{r}
 head(f)
@@ -200,7 +215,7 @@ str(f)
 データ構造を別の方法で確認してみましょう.
 `dplyr`パッケージの`glimpse`関数を利用します.
 
-なお, dplyr::glimpseはdplyrパッケージのglimpse関数を利用することを明示的に示す記法であり, libraryすれば基本的には必要はありません.
+なお, `dplyr::glimpse`は`dplyr`パッケージの`glimpse`関数を利用することを明示的に示す記法であり, `library(dplyr)`すれば基本的には必要はありません.
 
 ```{r}
 dplyr::glimpse(f)
@@ -208,7 +223,7 @@ dplyr::glimpse(f)
 
 ### 記述統計
 
-記述統計を見るには, summary()を利用します.
+記述統計を見るには, `summary()`を利用します.
 データ型が数値の場合には, 最小値, 第一四分位数(25%), 中央値, 平均, 第三四分位数(75%), 最大値が示されます.
 欠損値がある場合には, その数も合わせて表示されます.
 
@@ -220,67 +235,54 @@ summary(f)
 
 ### データの書き出し
 
-hというデータフレームを作成し, write.csv()関数を利用して, dataフォルダにdata.csvというcsvファイルを作成してみましょう.
+`h`というデータフレームを作成し, `write.csv()`関数を利用して, `data`フォルダに`data.csv`というcsvファイルを作成してみましょう.
 
-seq()関数は等差数列を作る関数で, fromは初項, toは末項, byは公差, length.outは項数を表しています.
+`seq()`関数は等差数列を作る関数で, `from`は初項, `to`は末項, `by`は公差, `length.out`は項数を表しています.
 
 ```{r}
 ABCDE    <- c("A",  "B",  "C",  "D",  "E")
 Japanese <- c("壱", "弐", "参", "四", "五")
 g <- data.frame(
   Int  = 1:300000, 
-  Int2 = seq(from = 0, by = 2.5, length.out = 300000), 
-  fac  = rep(ABCDE,    each = 2, times = 30000),
-  jpn  = rep(Japanese, each = 2, times = 30000))
-write.csv(g, here("data", "data.csv"), 
-          quote = FALSE, row.names = FALSE)
-```
-
-今開いているquartoのファイル上でdataというディレクトリを作成した場合(28行目)には, csvの書き出しの場所は以下のようにしてください.
-
-```{r}
-write.csv(g, here("Lecture-01", "data", "data.csv"), 
-          quote = FALSE, row.names = FALSE)
+  Int2 = seq(from       = 0, 
+             by         = 2.5,
+             length.out = 300000), 
+  fac  = rep(ABCDE,
+             each  = 2, 
+             times = 30000),
+  jpn  = rep(Japanese,
+             each  = 2,
+             times = 30000))
+write.csv(g, 
+          here("Lecture-01", "data", "data.csv"), 
+          quote     = FALSE, 
+          row.names = FALSE)
 ```
 
 以下読み込む場合も同じです.
 
 ### データの読み込み
 
-最もオーソドックスな読み込み方は, read.csv()関数です.
+最もオーソドックスな読み込み方は, `read.csv()`関数です.
 header=TRUEで先頭行が行名になっていることを明示します.
 
 ```{r}
-dat1 <- read.csv(here("data", "data.csv"), header = TRUE) 
-```
-もしくは
-```{r}
-dat1 <- read.csv(here("Lecture-01", "data", "data.csv"),
-                 header = TRUE) 
+dat1 <- read.csv(here("Lecture-01", "data", "data.csv"), header = TRUE) 
 ```
 
-最近増えてきているのは, readrパッケージに含まれるread_csv()関数です.
+最近増えてきているのは, `readr`パッケージに含まれる`read_csv()`関数です.
 自由度も高く, やや速いです.
 
-```{r}
-dat2 <- readr::read_csv(here("data", "data.csv"))
-```
-もしくは
 ```{r}
 dat2 <- readr::read_csv(here("Lecture-01", "data", "data.csv"))
 ```
 
-最後にdata.tableパッケージのfread()関数を紹介します.
+最後に`data.table`パッケージの`fread()`関数を紹介します.
 とても読み込みのスピードが早いですが, やや自由度に欠けます.
 大量のデータを読み込む際にはおすすめです.
     
 ```{r}
 p_load(data.table)
-dat3 <- data.table::fread(here("data", "data.csv"),
-                          data.table = FALSE)
-```
-もしくは
-```{r}
 dat3 <- data.table::fread(here("Lecture-01", "data", "data.csv"),
                           data.table = FALSE)
 ```
@@ -288,12 +290,6 @@ dat3 <- data.table::fread(here("Lecture-01", "data", "data.csv"),
 ### 速度の比較
 
 各関数によって, 読み込む速さが異なるため, 比較してみましょう.
-```{r}
-system.time(read.csv(here("data", "data.csv")))
-system.time(readr::read_csv(here("data", "data.csv")))
-system.time(data.table::fread(here("data", "data.csv")))
-```
-もしくは
 ```{r}
 system.time(read.csv(here("Lecture-01", "data", "data.csv")))
 system.time(readr::read_csv(here("Lecture-01", "data", "data.csv")))
@@ -305,22 +301,9 @@ system.time(data.table::fread(here("Lecture-01", "data", "data.csv")))
 日本語を含むデータを読み書きする際, 文字コードに注意が必要です.
 特にOSをまたいで利用する際には文字化けをしないように工夫が必要となります.
 
-Windowsで作られたファイルを読み込む際には Encoding=cp932 (Shift-JIS), MacやLinuxで作られたファイルを読み込む際には Encoding=UTF8を指定します.
-ファイルを書き出す際に文字コードを指定するには, fileEncoding = "UTF-8"を引数に追加しましょう.
+Windowsで作られたファイルを読み込む際には `encoding = cp932` (Shift-JIS), MacやLinuxで作られたファイルを読み込む際には `encoding = UTF8`を指定します.
+ファイルを書き出す際に文字コードを指定するには, `fileEncoding = "UTF-8"`を引数に追加しましょう.
 
-```{r}
-dat1 <- read.csv(here("data", "data.csv"), 
-                 header       = TRUE, 
-                 fileEncoding = "UTF8")
-dat2 <- readr::read_csv(here("data", "data.csv"), 
-                        locale = locale(encoding = "UTF8"))
-write.csv(dat2,
-          here("data", "data.csv"), 
-          quote        = FALSE, 
-          row.names    = FALSE,
-          fileEncoding = "UTF-8")
-```
-もしくは
 ```{r}
 dat1 <- read.csv(here("Lecture-01", "data", "data.csv"),
                  header       = TRUE, 
@@ -336,7 +319,8 @@ write.csv(dat2, here("Lecture-01", "data", "data.csv"),
 ### Excelファイルの読み込み
 
 Excelファイルを読み込むための関数も様々あります.
-ここでは, readxlパッケージのread_excel()を紹介します.
+ここでは, `readxl`パッケージの`read_excel()`を紹介します.
+下記のコードは紹介用のため動きません.
 
 ```{r}
 p_load("readxl")
