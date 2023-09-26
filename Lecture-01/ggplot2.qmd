@@ -36,8 +36,6 @@ ggplot() +
 そして, 6行目と12行目にy = after_stat(density)を追加し, y軸を割合に変更します.
 7行目にfill = "blue"を追加し, ヒストグラムに色を付けます.
 また, ヒストグラムを描画した図にgeom_density()で密度曲線を追加しましょう.
-最終行で指定した引数のalphaは密度曲線の中の透明度を表します.
-今回は0%を指定して透明にしました.
 
 ```{r}
 ggplot() +
@@ -51,8 +49,7 @@ ggplot() +
     data = iris,
     mapping = aes(
       x = Petal.Length,
-      y = after_stat(density)),
-    alpha = 0)
+      y = after_stat(density)))
 ```
 
 何度も同じデータやx軸等が利用できる場合には, はじめの`ggplot()`の引数の中でまとめて指定することができます.
@@ -63,7 +60,7 @@ ggplot(data    = iris,
          x = Petal.Length,
          y = after_stat(density))) +
   geom_histogram(fill = "blue") +
-  geom_density(alpha = 0)
+  geom_density()
 ```
 
 さらに軸などを指定する`aes()`は外に出すこともできます
@@ -73,7 +70,7 @@ ggplot(data = iris) +
   aes(x = Petal.Length,
       y = after_stat(density)) +
   geom_histogram(fill = "blue") +
-  geom_density(alpha  = 0)
+  geom_density()
 ```
 
 
@@ -85,7 +82,7 @@ ggplot(data = iris) +
   aes(x = Petal.Length,
       y = after_stat(density)) +
   geom_histogram(fill = "blue") +
-  geom_density(alpha = 0) +
+  geom_density() +
   theme_classic()
 ```
 
@@ -108,6 +105,7 @@ ggplot(data = iris) +
 1枚のグラフにカテゴリーごとのヒストグラムを描いてみましょう.
 aes(fill= Category)とすることでカテゴリーごとに色分けができます.
 また, geom_histogram(position = "identity")とすると1つの図の中でカテゴリーごとにヒストグラムが描けます.
+`alpha = 0.5`と書くことでヒストグラムを半透明にして見やすくしています.
 
 ```{r}
 ggplot(data = iris) +
@@ -117,7 +115,7 @@ ggplot(data = iris) +
   geom_histogram(
     position = "identity",
     alpha    = 0.5) +
-  geom_density(alpha = 0)
+  geom_density()
 ```
 
 ### 別々のグラフにカテゴリーごとのグラフを描く
@@ -132,7 +130,7 @@ ggplot(data = iris) +
       y    = after_stat(density),
       fill = Species) +
   geom_histogram() +
-  geom_density(alpha = 0) + 
+  geom_density() + 
   facet_wrap(~Species,
              scales = "free")
 ```
