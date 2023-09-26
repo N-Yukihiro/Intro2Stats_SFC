@@ -33,7 +33,7 @@ ggplot() +
     )
 ```
 
-そして, 6行目と12行目にy = ..density..を追加し, y軸を割合に変更します.
+そして, 6行目と12行目にy = after_stat(density)を追加し, y軸を割合に変更します.
 7行目にfill = "blue"を追加し, ヒストグラムに色を付けます.
 また, ヒストグラムを描画した図にgeom_density()で密度曲線を追加しましょう.
 最終行で指定した引数のalphaは密度曲線の中の透明度を表します.
@@ -45,13 +45,13 @@ ggplot() +
     data = iris,
     mapping = aes(
       x = Petal.Length,
-      y = ..density..),
+      y = after_stat(density)),
     fill = "blue") +
   geom_density(
     data = iris,
     mapping = aes(
       x = Petal.Length,
-      y = ..density..),
+      y = after_stat(density)),
     alpha = 0)
 ```
 
@@ -61,7 +61,7 @@ ggplot() +
 ggplot(data    = iris,
        mapping = aes(
          x = Petal.Length,
-         y = ..density..)) +
+         y = after_stat(density))) +
   geom_histogram(fill = "blue") +
   geom_density(alpha = 0)
 ```
@@ -71,7 +71,7 @@ ggplot(data    = iris,
 ```{r}
 ggplot(data = iris) +
   aes(x = Petal.Length,
-      y = ..density..) +
+      y = after_stat(density)) +
   geom_histogram(fill = "blue") +
   geom_density(alpha  = 0)
 ```
@@ -83,7 +83,7 @@ theme_classic()で背景を白く, 重要でない線はなくすなど行いま
 ```{r}
 ggplot(data = iris) +
   aes(x = Petal.Length,
-      y = ..density..) +
+      y = after_stat(density)) +
   geom_histogram(fill = "blue") +
   geom_density(alpha = 0) +
   theme_classic()
@@ -96,7 +96,7 @@ ggplot(data = iris) +
 ```{r}
 ggplot(data = iris) +
   aes(x = Petal.Length,
-      y = ..density..) +
+      y = after_stat(density)) +
   geom_histogram(fill = "blue") +
   geom_density(alpha = 0) +
   theme_classic() +
@@ -112,7 +112,7 @@ aes(fill= Category)とすることでカテゴリーごとに色分けができ�
 ```{r}
 ggplot(data = iris) +
   aes(x    = Petal.Length,
-      y    = ..density..,
+      y    = after_stat(density),
       fill = Species) +
   geom_histogram(
     position = "identity",
@@ -129,7 +129,7 @@ scales = "free"でx軸やy軸をそれぞれのカテゴリーに最適化しま
 ```{r}
 ggplot(data = iris) +
   aes(x    = Petal.Length,
-      y    = ..density..,
+      y    = after_stat(density),
       fill = Species) +
   geom_histogram() +
   geom_density(alpha = 0) + 
