@@ -6,10 +6,10 @@ format: html
 ## 準備
 
 ### データの読み込み
-- 『家計調査』2017年11月、第2−6表「年間収入階級別1世帯当たり1か月間の収入と支出」から作成した所得階級と支出のデータ`kakei201709_l18.csv`を用いる[^url]
+『家計調査』2017年11月、第2−6表「年間収入階級別1世帯当たり1か月間の収入と支出」から作成した所得階級と支出のデータ`kakei201709_l18.csv`を用いる[^url].
 
-- 月間消費支出(円)(`CONS`), 月間消費支出(1万円)(`CONS1`), 年間収入(1万円)(INC), 有業人員(人)(`WORK`)
-    - いずれも調査世帯の平均値
+月間消費支出(円)(`CONS`), 月間消費支出(1万円)(`CONS1`), 年間収入(1万円)(INC), 有業人員(人)(`WORK`).
+いずれも調査世帯の平均値/
 
 ```{r}
 library(pacman)
@@ -19,8 +19,8 @@ names(kakei)
 ```
 
 ### データ構造の把握
-- データを読み込んだらどのようなデータで構成されているのか確認を行う
-- `dplyr`パッケージの`glimpse`関数を利用する
+データを読み込んだらどのようなデータで構成されているのか確認を行う.
+`dplyr`パッケージの`glimpse`関数を利用する.
 
 ```{r}
 p_load(dplyr)
@@ -28,8 +28,8 @@ dplyr::glimpse(kakei)
 ```
 
 ### 記述統計の確認
-- データ構造を確認したら, 次に記述統計を確認する
-- 記述統計を把握するには, `summary`を利用する
+データ構造を確認したら, 次に記述統計を確認する.
+記述統計を把握するには, `summary`を利用する.
 
 ```{r}
 summary(kakei)
@@ -37,8 +37,8 @@ summary(kakei)
 
 ### ヒストグラムの描画
 
-- 記述統計を把握したら, ヒストグラムを描いてデータをグラフで確認する
-- `ggplot2`パッケージをの`geom_histogram()`関数を使ってヒストグラムを描く
+記述統計を把握したら, ヒストグラムを描いてデータをグラフで確認する.
+`ggplot2`パッケージをの`geom_histogram()`関数を使ってヒストグラムを描く.
 
 ```{r}
 p_load(ggplot2)
@@ -53,11 +53,12 @@ ggplot(data = kakei) +
 
 ### 散布図の描画
 
-- 2変数間の関係を把握するために散布図を描くには, `geom_point()`関数を利用する
+2変数間の関係を把握するために散布図を描くには, `geom_point()`関数を利用する.
 
 ```{r}
 ggplot(data = kakei) +
-  aes(x = INC, y = CONS1) +
+  aes(x = INC,
+      y = CONS1) +
   geom_point() + 
   xlab("Income (10,000 yen)") + 
   ylab("Consumption (10,000 yen)") +
@@ -66,7 +67,7 @@ ggplot(data = kakei) +
 
 ### ピアソンの積率相関係数の算出
 
-- ピアソンの積率相関係数を算出するためには, `cor.test()`関数を利用する
+ピアソンの積率相関係数を算出するためには, `cor.test()`関数を利用する.
 
 ```{r}
 cor.test(x      = kakei$INC,
@@ -76,9 +77,9 @@ cor.test(x      = kakei$INC,
 
 ### シミュレーションデータと散布図(Advanced)
 
-- 相関係数を自身で決めてグラフを描いてみる
-    - まずは相関係数0.9の散布図を描く
-    - ある相関係数に従う乱数を生成するには`MASS`パッケージの`mvnorm()`関数を用いる
+相関係数を自身で決めてグラフを描いてみる.
+まずは相関係数0.9の散布図を描く.
+ある相関係数に従う乱数を生成するには`MASS`パッケージの`mvnorm()`関数を用いる.
 
 ```{r}
 p_load(withr, MASS, tibble)
@@ -86,7 +87,7 @@ with_seed(
   2718,
   mvrnorm(n     = 100,
           mu    = c(0, 0), 
-          Sigma = matrix(c(1, 0.9, 
+          Sigma = matrix(c(1,   0.9, 
                            0.9, 1),
                          ncol = 2),
           empirical = TRUE)) |> 
@@ -101,27 +102,25 @@ with_seed(
 
 ### 様々な相関係数と散布図(Advanced)
 
-- `purrr`パッケージを用いて様々な相関係数の散布図を描画する
+`purrr`パッケージを用いて様々な相関係数の散布図を描画する.
 
 ```{r}
 p_load(purrr)
 list <- list(-1, -0.9, -0.5, -0.2, 0, 
-             0.2, 0.5, 0.9, 1)
+             0.2, 0.5, 0.9,  1)
 with_seed(
   2718,
   list |>
-    map(~mvrnorm(
+    map(\(x) mvrnorm(
       n         = 100,
       mu        = c(0, 0),
-      Sigma     = matrix(c(1, .x, .x, 1),
+      Sigma     = matrix(c(1, x, x, 1),
                          ncol = 2),
-      empirical = TRUE)) |>
-    map(as_tibble) |> 
-    purrr::set_names(list) |> 
-    map_dfr(rename, 
-            x   = 1,
-            y   = 2,
-            .id = "cor")) |> 
+      empirical = TRUE))) |>
+  map(as_tibble) |> 
+  purrr::set_names(list) |> 
+  map(\(data) rename(data, x = 1, y = 2)) |> 
+  list_rbind(names_to = "cor") |> 
   mutate(cor = as.numeric(cor) |> 
            as.factor()) |> 
   ggplot() +
@@ -133,18 +132,19 @@ with_seed(
 
 ### 相関のないデータ
 
-- 次のデータの2変数は関係のある変数だろうかない変数だろうか
-    - `cor.test()`関数は次のように書くこともできる
+次のデータの2変数は関係のある変数だろうかない変数だろうか.
+なお, `cor.test()`関数は次のように書くこともできる.
 
 ```{r}
 cor_data <- read_csv(here("data", "cor.csv"))
-cor.test(~ x + y, data = cor_data,
+cor.test(~ x + y, 
+         data   = cor_data,
          method = "pearson")
 ```
 
 ### 関係はあるが相関のないデータ
 
-- 相関係数はあくまで直線関係しか判断できない
+相関係数はあくまで直線関係しか判断できない.
 
 ```{r}
 ggplot(data = cor_data) +
@@ -157,10 +157,9 @@ ggplot(data = cor_data) +
 
 ### 単回帰分析
 
-- 最小二乗法を用いて単回帰分析を行うためには, `lm()`関数を利用する
-
-- 第1引数に分析のモデルを指定する
-    - `~`の前に応答変数を, `~`の後に説明変数を指定する
+最小二乗法を用いて単回帰分析を行うためには, `lm()`関数を利用する.
+第1引数に分析のモデルを指定する.
+`~`の前に応答変数を, `~`の後に説明変数を指定する.
     
 ```{r}
 ols1 <- lm(CONS1 ~ INC, data = kakei)
@@ -168,9 +167,9 @@ ols1 <- lm(CONS1 ~ INC, data = kakei)
 
 ### 結果の示し方
 
-- `summary()`関数で結果を見るのが一般的だが, `jtools`パッケージの`summ()`関数や`stargazer`パッケージの`stargazer()`関数などを使うほうが良い
-    - `jtools`パッケージは自分が結果を見るときに使うのがおすすめ
-    - `stargazer`パッケージは結果をそのまま論文などに転載したいときにおすすめ
+`summary()`関数で結果を見るのが一般的だが, `jtools`パッケージの`summ()`関数や`stargazer`パッケージの`stargazer()`関数などを使うほうが良い.
+`jtools`パッケージは自分が結果を見るときに使うのがおすすめ.
+`stargazer`パッケージは結果をそのまま論文などに転載したいときにおすすめ.
 
 ```{r}
 p_load(jtools)
@@ -179,25 +178,26 @@ jtools::summ(ols1)
 
 ### 結果の読み方
 
-- MODEL INFOにモデルの内容が記述される
-    - Observationsにサンプルサイズが, Dependent Variableに応答変数が, Typeに分析方法が示される
-    - 今回はサンプルサイズ18で, 応答変数は`CONS1`, 分析方法は最小二乗法(OLS)であることが示される
+MODEL INFOにモデルの内容が記述される.
+Observationsにサンプルサイズが, Dependent Variableに応答変数が, Typeに分析方法が示される.
+今回はサンプルサイズ18で, 応答変数は`CONS1`, 分析方法は最小二乗法(OLS)であることが示される.
 
-- MODEL FITに分析の結果が記述される
-    - 回帰式の適合度検定のF値がまず示され, p値が計算されている
-    - 次に決定係数$R^2$の値が示され, その下に自由度調整済み決定係数$adj. R^2$が示される
+MODEL FITに分析の結果が記述される.
+回帰式の適合度検定のF値がまず示され, p値が計算されている.
+次に決定係数$R^2$の値が示され, その下に自由度調整済み決定係数$adj. R^2$が示される.
 
-- 最後の表に分析の結果が示される
-    - (Intercept)に定数項が, その後に説明変数が示される
-    - Est. の列に回帰係数が, S.E. に標準誤差が示される
-    - t val.にt値が示され, pにp値が示される
+最後の表に分析の結果が示される.
+(Intercept)に定数項が, その後に説明変数が示される.
+Est. の列に回帰係数が, S.E. に標準誤差が示される.
+t val.にt値が示され, pにp値が示される.
 
 ### 結果を論文に掲載する
 
-- 結果を論文に掲載できるようにきれいに整形するには`stargazer`パッケージを利用するのが便利
-- 様々な引数があるので, 使いこなすにはHELPを参照
-- `star.cutoffs = NA, omit.table.layout = "n"`は忘れない
-    - 分析がしたいのであって, 天体観測がしたいわけではないことに注意
+結果を論文に掲載できるようにきれいに整形するには`stargazer`パッケージを利用するのが便利.
+様々な引数があるので, 使いこなすにはHELPを参照のこと.
+
+`star.cutoffs = NA, omit.table.layout = "n"`は忘れない.
+分析がしたいのであって, 天体観測がしたいわけではないことに注意.
 
 ```{r}
 p_load(stargazer)
@@ -212,7 +212,7 @@ stargazer::stargazer(ols1,
 
 ### 散布図と回帰直線
 
-- 散布図に回帰直線を引きたい場合には, `geom_smooth()`関数を利用する
+散布図に回帰直線を引きたい場合には, `geom_smooth()`関数を利用する.
 
 ```{r}
 ggplot(data = kakei) +
@@ -225,7 +225,7 @@ ggplot(data = kakei) +
 
 ### 回帰直線と平均
 
-- 単回帰分析の場合回帰直線は必ずxとyの平均の交点を通る
+単回帰分析の場合回帰直線は必ずxとyの平均の交点を通る.
 
 ```{r}
 ggplot(data = kakei) +
@@ -240,12 +240,12 @@ ggplot(data = kakei) +
 
 ### 決定係数と相関係数
 
-- 単回帰分析の場合, 相関係数の2乗は決定係数と一致する
+単回帰分析の場合, 相関係数の2乗は決定係数と一致する.
 
 ```{r}
-summary(ols1)$r.squared;
+summary(ols1)$r.squared
 cor(x = kakei$INC, 
-    y = kakei$CONS1)^2;
+    y = kakei$CONS1)^2
 all.equal(summary(ols1)$r.squared,
           cor(x = kakei$INC,
               y = kakei$CONS1)^2)
@@ -255,9 +255,9 @@ all.equal(summary(ols1)$r.squared,
 
 ### データの準備
 
-- 本日の演習ではシミュレーションデータを用いる
-- 母集団としてサイズが100万で平均2, 分散4の正規分布に従う説明変数を作成する
-- 応答変数は定数項が2, 説明変数の回帰係数が3, 誤差項は平均0で標準偏差1とする
+ここからの演習ではシミュレーションデータを用いる.
+母集団としてサイズが100万で平均2, 分散4の正規分布に従う説明変数を作成する.
+応答変数は定数項が2, 説明変数の回帰係数が3, 誤差項は平均0で標準偏差1とする.
 
 ```{r}
 pop <- with_seed(
@@ -271,7 +271,7 @@ pop <- with_seed(
 
 ### 母集団のデータの概要
 
-- 母集団のデータの概要を確認する
+母集団のデータの概要を確認する.
 
 ```{r}
 summary(pop)
@@ -279,7 +279,7 @@ summary(pop)
 
 ### 母集団の回帰係数
 
-- 母集団を作成した際に利用した係数と推定された回帰係数は一致する
+母集団を作成した際に利用した係数と推定された回帰係数は一致する.
 
 ```{r}
 pop_lm <- lm(y ~ x, data = pop)
@@ -288,26 +288,24 @@ jtools::j_summ(pop_lm)
 
 ### モンテカルロ・シミュレーション
 
-- 母集団からサイズ100の標本を1000個作成し, xの回帰係数を求める
+母集団からサイズ100の標本を1000個作成し, xの回帰係数を求める.
 
 ```{r}
 p_load(broom)
 sim_data <- with_seed(
   27182,
-  rerun(.n = 1000, 
-        slice_sample(pop,
-                     n = 100)) |>
-    map_dfr(as.vector, 
-            .id = "number") |>
-    group_split(number) |> 
-    map(~ lm(y ~ x,
-             data = .x)) |> 
-    map_dfr(broom::tidy))
+  map(1:1000, 
+      ~ slice_sample(pop, n = 100))) |>
+  list_rbind(names_to = "number") |> 
+  group_split(number) |> 
+  map(\(data) lm(y ~ x, data = data)) |> 
+  map(broom::tidy) |> 
+  list_rbind()
 ```
 
 ### 回帰係数と不偏性
 
-- サンプル抽出を繰り返し, 回帰係数の期待値(平均)を取ると真の値と一致する
+サンプル抽出を繰り返し, 回帰係数の期待値(平均)を取ると真の値と一致する.
 
 ```{r}
 sim_data |>
@@ -317,38 +315,33 @@ sim_data |>
 
 ### 標本サイズを少しずつ増やす
 
-- サンプルサイズ10000に達するまで漸近的にサンプルサイズを増やしながら無作為抽出を行う
+サンプルサイズ10000に達するまで漸近的にサンプルサイズを増やしながら無作為抽出を行う.
 
 ```{r}
 list2 <- 3:1000
 sim_data2 <- with_seed(
   27182,
   list2 |> 
-    map_dfr(~slice_sample(pop,
-                          n = .x),
-            .id = "number") |>
-    mutate(number = as.numeric(number)) |> 
-    group_split(number) |>
-    map(~ lm(y ~ x, 
-             data = .x)) |> 
-    map_dfr(broom::tidy,
-            .id = "number"))
+    map(\(size) slice_sample(pop, n = size))) |>
+  list_rbind(names_to = "number") |> 
+  group_split(number) |>
+  map(\(data) lm(y ~ x, data = data)) |> 
+  map(broom::tidy) |> 
+  list_rbind(names_to = "number")
 ```
 
 ### 回帰係数と一致性
 
-- サンプルサイズが大きくなるにつれて標本の回帰係数は真の値に近づいていく
+サンプルサイズが大きくなるにつれて標本の回帰係数は真の値に近づいていく.
 
 ```{r}
 sim_data2 |>
   mutate(
-    number = as.numeric(number),
-    true   = if_else(term == "x",
-                     3, 2)) |> 
+    true = if_else(term == "x",
+                   3, 2)) |> 
   ggplot() +
-  aes(x = number, 
-      y = estimate) +
-  geom_line() +
+  aes(x = number) +
+  geom_line(aes(y = estimate)) +
   geom_line(aes(y = true),
             colour = "red") + 
   facet_wrap(~ term,
