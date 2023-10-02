@@ -324,8 +324,8 @@ Excelファイルを読み込むための関数も様々あります.
 
 ```{r}
 p_load("readxl")
-excel <- readxl::read_excel("data.xlsx", 
-                            sheet = "シート名or番号")
+# excel <- readxl::read_excel("data.xlsx", 
+#                             sheet = "シート名or番号")
 ```
 
 以上です.
