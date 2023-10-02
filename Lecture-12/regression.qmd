@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "回帰分析"
 format: html
 ---
 
@@ -7,10 +7,10 @@ format: html
 
 ### データの読み込み
 
-- 米国のある大学における教員に対して支払われた9か月間の給与データ
-- 期間は2008年から2009年
-- 教員の役職(助教授, 准教授, 教授)や研究分野(理論研究か応用研究か), 博士号取得からの年数, 勤務年数, 性別が含まれている
-- 男女の賃金格差を検証するために収集された
+米国のある大学における教員に対して支払われた9か月間の給与データを用いる.
+期間は2008年から2009年.
+教員の役職(助教授, 准教授, 教授)や研究分野(理論研究か応用研究か), 博士号取得からの年数, 勤務年数, 性別が含まれている.
+男女の賃金格差を検証するために収集された.
 
 ```{r}
 library(pacman)
@@ -21,7 +21,7 @@ names(Salaries)
 
 ### データ構造の確認
 
-- 分析の前にデータの構造を確認する
+分析の前にデータの構造を確認する.
 
 ```{r}
 p_load(dplyr)
@@ -30,8 +30,8 @@ glimpse(Salaries)
 
 ### factor型データのレベルチェック
 
-- factor型データは見かけだけでなくどのような順番で定義されているかも確認しておいた方が問題を回避できる
-- factor型のデータの順序を確認するためには`levels()`関数を利用する
+factor型データは見かけだけでなくどのような順番で定義されているかも確認しておいた方が問題を回避できる.
+factor型のデータの順序を確認するためには`levels()`関数を利用する.
 
 ```{r}
 levels(Salaries$rank)
@@ -41,7 +41,7 @@ levels(Salaries$sex)
 
 ### データの記述統計
 
-- `summary()`関数を利用してデータの記述統計を確認する
+`summary()`関数を利用してデータの記述統計を確認する.
 
 ```{r}
 summary(Salaries)
@@ -49,16 +49,14 @@ summary(Salaries)
 
 ### データのペアプロット
 
-- データのペアプロットをして列間の関係を把握する
+データのペアプロットをして列間の関係を把握する.
 
 ```{r}
 p_load(ggplot2, GGally)
 ggpairs(Salaries)
 ```
 
-### データのペアプロット2
-
-- 男女で色分けしてみる
+男女で色分けしてみる.
 
 ```{r}
 ggpairs(Salaries, aes(colour = sex, alpha = 0.5))
@@ -66,7 +64,7 @@ ggpairs(Salaries, aes(colour = sex, alpha = 0.5))
 
 ### グラフの描画1
 
-- ペアプロットの右上のグラフをx軸とy軸を反転してggplot2で描いてみる
+ペアプロットの右上のグラフをx軸とy軸を反転してggplot2で描いてみる.
 
 ```{r}
 ggplot(data = Salaries) +
@@ -80,8 +78,8 @@ ggplot(data = Salaries) +
 
 ### クロス集計表
 
-- 男女の人数差が大きいため, factor型データ同士で分割表(クロス集計表)を作って関係性を見る
-- `xtabs()`関数を利用し, 記法は相関や回帰と同様
+男女の人数差が大きいため, factor型データ同士で分割表(クロス集計表)を作って関係性を見る.
+`xtabs()`関数を利用し, 記法は相関や回帰と同様である.
 
 ```{r}
 cross <- xtabs(~ rank + sex, data = Salaries)
@@ -91,14 +89,14 @@ xtabs(~ discipline + sex, data = Salaries)
 
 ### クロス集計表(相対度数)
 
-- 相対度数を見る場合は分割表を`prop.table()`関数に与える
-- 表全体を合計すると1
+相対度数を見る場合は分割表を`prop.table()`関数に与える.
+表全体を合計すると1の場合.
 
 ```{r}
 prop.table(cross)
 ```
 
-- 引数`margin = 1`とすると行の合計が1となり, `margin = 2`で列の合計が1となる
+引数`margin = 1`とすると行の合計が1となり, `margin = 2`で列の合計が1となる.
 
 ```{r}
 prop.table(cross, margin = 2)
@@ -106,41 +104,44 @@ prop.table(cross, margin = 2)
 
 ### 男女別給与の平均値
 
-- 男女別に給与の平均値がどれくらいかを算出する
+男女別に給与の平均値がどれくらいかを算出する.
 
 ```{r}
 Salaries |> 
   group_by(sex) |> 
-  summarise(mean = mean(salary), sd = sd(salary))
+  summarise(mean = mean(salary), 
+            sd   = sd(salary))
 ```
 
 
 ### 平均値の差の検定(Studentのt検定)
 
-- 男性と女性で平均値に差があるのかを検定する
-- 男性と女性で給与の分散が等しい(`var.equal = TRUE`)と仮定
-- studentのt検定
+男性と女性で平均値に差があるのかを検定する.
+男性と女性で給与の分散が等しい(`var.equal = TRUE`)と仮定する.
 
 ```{r}
-t.test(salary ~ sex,   data = Salaries,
-       paired = FALSE, var.equal = TRUE)
+t.test(salary ~ sex,   
+       data      = Salaries,
+       paired    = FALSE,
+       var.equal = TRUE)
 ```
 
 ### 平均値の差の検定(Welchのt検定)
 
-- 男性と女性で平均値に差があるのかを検定する
-- 男性と女性で給与の分散が等しいと仮定を置かない(`var.equal = FALSE`)
-- Welchのt検定
+男性と女性で平均値に差があるのかを検定する.
+男性と女性で給与の分散が等しいと仮定を置かない(`var.equal = FALSE`).
 
 ```{r}
-t.test(salary ~ sex,   data = Salaries,
-       paired = FALSE, var.equal = FALSE)
+t.test(salary ~ sex,
+       data      = Salaries,
+       paired    = FALSE,
+       var.equal = FALSE)
 ```
 
 ### 回帰分析(単回帰: ダミー変数のみ)
 
-- まずはじめに性別のみを説明変数とする単回帰分析を行う
-- ダミー変数のみを説明変数とする単回帰分析の結果はStudentのt検定の結果と一致する
+まずはじめに性別のみを説明変数とする単回帰分析を行う.
+ダミー変数のみを説明変数とする単回帰分析の結果はStudentのt検定の結果と一致する.
 
 ```{r}
 model1 <- lm(salary ~ sex, data = Salaries)
@@ -150,7 +151,7 @@ summ(model1, confint = T)
 
 ### 回帰係数の図示
 
-- 回帰分析の結果は表だけでなく, グラフ化するとわかりやすい
+回帰分析の結果は表だけでなく, グラフ化するとわかりやすい.
 
 ```{r}
 p_load(coefplot)
@@ -159,11 +160,11 @@ coefplot(model1)
 
 ### 回帰分析(フルモデル)
 
-- とりあえず全ての変数を投入して重回帰分析を行う
-- データフレーム内の全ての変数を説明変数とするときには`lm(y ~ .)`のように`.`を利用する
-- 多重共線性の疑いがある
-- Ph.D取得からの年数($\simeq$ 年齢)と勤続年数
-- 勤続年数が長いほど給与が減少するという結果になっている
+とりあえず全ての変数を投入して重回帰分析を行う.
+データフレーム内の全ての変数を説明変数とするときには`lm(y ~ .)`のように`.`を利用する.
+
+多重共線性の疑い(Ph.D取得からの年数($\simeq$ 年齢)と勤続年数)がある.
+勤続年数が長いほど給与が減少するという結果になっている.
 
 ```{r}
 model2 <- lm(salary ~ ., data = Salaries)
@@ -172,8 +173,8 @@ summ(model2, vifs = TRUE)
 
 ### 結果の図示
 
-- 回帰分析の結果は表だけでなく, グラフ化するとわかりやすい
-- 結果のグラフ化には`coefplot`パッケージの`coefplot()`関数が便利
+回帰分析の結果は表だけでなく, グラフ化するとわかりやすい.
+結果のグラフ化には`coefplot`パッケージの`coefplot()`関数が便利.
 
 ```{r}
 coefplot(model2)
@@ -181,7 +182,7 @@ coefplot(model2)
 
 ### 回帰分析(除く勤続年数年数)
 
-- 勤続年数を除いて推計する
+勤続年数を除いて推計する.
 
 ```{r}
 model3 <- lm(salary ~ rank + discipline + yrs.since.phd + sex,
@@ -191,8 +192,8 @@ summ(model3)
 
 ### 回帰分析(前提知識からのモデルの検討)
 
-- 女性であるがゆえに昇進できないとすると`rank`を除いた方がより女性であることによって給与に差があるのかを評価ができる
-- `rank`が含まれていると女性であるがゆえに昇進できないことは評価できず, 同じ職階の時に性別によって年収に差が出るのかを検証する
+女性であるがゆえに昇進できないとすると`rank`を除いた方がより女性であることによって給与に差があるのかを評価ができる.
+`rank`が含まれていると女性であるがゆえに昇進できないことは評価できず, 同じ職階の時に性別によって年収に差が出るのかを検証する.
 
 ```{r}
 model4 <- lm(salary ~ discipline + yrs.since.phd + sex,
@@ -200,12 +201,30 @@ model4 <- lm(salary ~ discipline + yrs.since.phd + sex,
 summ(model4)
 ```
 
+### 分散不均一の考慮
+
+Welchのt検定のように分散不均一を考慮する際には`estimatr`パッケージの`lm_robust()`関数を利用すると分散不均一を補正した標準誤差を計算できる.
+
+```{r}
+p_load(estimatr)
+lm_robust(salary ~ discipline + yrs.since.phd + sex,
+          data    = Salaries, 
+          se_type = "HC3") |> 
+  summary()
+```
+
+分散不均一を補正した結果は`summ()`関数の中で`robust`の引数を指定することでも表示できる.
+
+```{r}
+summ(model1, robust = "HC3")
+```
+
 ### 回帰分析(交互作用項)
 
-- 交互作用項を追加する
-- 交互作用項を追加するには, 交互作用を追加したい変数同士を`*`でつなぐ
-- 今回は役職の博士号取得からの年数に与える効果は研究分野によって異なることを検討する
-- 連続変数を一般的には中心化するがここでは省略
+交互作用項を追加する.
+交互作用項を追加するには, 交互作用を追加したい変数同士を`*`でつなぐ.
+今回は役職の博士号取得からの年数に与える効果は研究分野によって異なることを検討する.
+連続変数を一般的には中心化するがここでは省略.
 
 ```{r}
 model5 <- lm(salary ~ rank + discipline * yrs.since.phd + sex,
@@ -215,16 +234,16 @@ summ(model5)
 
 ### 係数の解釈
 
-- 回帰分析の係数の解釈は他の変数を一定としたとき, その変数が1単位増加した時にどれだけ応答変数が変化するか
-- 交互作用項を加えた際には他の変数を一定とするの解釈が難しい
-- 理論研究を行う学部の教員における年数の効果
+回帰分析の係数の解釈は他の変数を一定としたとき, その変数が1単位増加した時にどれだけ応答変数が変化するか.
+交互作用項を加えた際には他の変数を一定とするの解釈が難しい.
+理論研究を行う学部の教員における年数の効果を調べる.
 
 ```{r}
 model5$coefficients[5]
 ```
 
-- 応用研究を行う学部の教員における年数の効果
-- なお, 今回は交互作用項は有意ではない
+応用研究を行う学部の教員における年数の効果を調べる.
+なお, 今回は交互作用項は有意ではない.
 
 ```{r}
 model5$coefficients[5] + model5$coefficients[7]
@@ -232,8 +251,8 @@ model5$coefficients[5] + model5$coefficients[7]
 
 ### 限界効果のプロット1
 
-- 教員が所属する学部の分野によって博士号取得からの年数の係数がどれだけ変化するかを図示する
-- `interplot`パッケージが便利
+教員が所属する学部の分野によって博士号取得からの年数の係数がどれだけ変化するかを図示する.
+`interplot`パッケージが便利.
 
 ```{r}
 p_load(interplot)
@@ -244,9 +263,7 @@ interplot(
   )
 ```
 
-### 限界効果のプロット2
-
-- 博士号取得からの年数によって教員が所属する学部の分野の係数どれだけ変化するかを図示する
+博士号取得からの年数によって教員が所属する学部の分野の係数どれだけ変化するかを図示する.
 
 ```{r}
 interplot(
@@ -258,7 +275,7 @@ interplot(
 
 ### モデルの比較
 
-- `stargazer`パッケージを使って結果を表にまとめる
+`stargazer`パッケージを使って結果を表にまとめる.
 
 ```{r}
 p_load(stargazer)
@@ -273,7 +290,7 @@ stargazer(model1, model2, model3, model4, model5,
 
 ### AIC
 
-- AICを各モデルで算出する
+AICを各モデルで算出する.
 
 ```{r}
 AIC(model1, model2, model3, model4, model5)
@@ -281,7 +298,7 @@ AIC(model1, model2, model3, model4, model5)
 
 ### BIC
 
-- BICを各モデルで算出する
+BICを各モデルで算出する.
 
 ```{r}
 BIC(model1, model2, model3, model4, model5)
@@ -289,7 +306,7 @@ BIC(model1, model2, model3, model4, model5)
 
 ### モデルの整理
 
-- `caret`パッケージでまとめてLOOCVを行うためにモデルを整理する
+`caret`パッケージでまとめてLOOCVを行うためにモデルを整理する.
 
 ```{r}
 p_load(tibble)
@@ -304,7 +321,7 @@ models <- c(salary ~ sex,
 
 ### LOOCVの実行
 
-- `purrr`パッケージなどを用いてまとめてLOOCVを行う
+`purrr`パッケージなどを用いてまとめてLOOCVを行う..
 
 ```{r}
 p_load(purrr, caret, tidyr)
@@ -314,7 +331,7 @@ models |>
                                  method = "lm",
                                  data = Salaries,
                                  trControl = trainControl("LOOCV")))) |> 
-  mutate(results = map(model, ~.x$results)) |> 
+  mutate(results = map(model, "results")) |> 
   dplyr::select(model_index, results) |> 
   tidyr::unnest()
 ```
