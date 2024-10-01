@@ -122,7 +122,6 @@ Salaries |>
 ```{r}
 t.test(salary ~ sex,   
        data      = Salaries,
-       paired    = FALSE,
        var.equal = TRUE)
 ```
 
@@ -134,7 +133,6 @@ t.test(salary ~ sex,
 ```{r}
 t.test(salary ~ sex,
        data      = Salaries,
-       paired    = FALSE,
        var.equal = FALSE)
 ```
 
@@ -327,10 +325,10 @@ models <- c(salary ~ sex,
 p_load(purrr, caret, tidyr)
 models |> 
   mutate(model = map(.x = formula,
-                     .f = ~train(.x,
-                                 method = "lm",
-                                 data = Salaries,
-                                 trControl = trainControl("LOOCV")))) |> 
+                     .f = \(model) train(model,
+                                         method = "lm",
+                                         data = Salaries,
+                                         trControl = trainControl("LOOCV")))) |> 
   mutate(results = map(model, "results")) |> 
   dplyr::select(model_index, results) |> 
   tidyr::unnest()
