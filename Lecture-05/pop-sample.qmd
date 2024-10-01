@@ -5,38 +5,30 @@ format: html
 
 # R演習
 
-### コードの入手方法
-
-前回R演習を行わなかったものは前回のスライドからcloneを実行する.
-Githubが更新された場合は次のコードを実行する.
-
-```{r}
-# install.packages("pacman")
-library(pacman)
-p_load(git2r)
-git2r::pull()
-```
-
 ## 平均・分散・標準偏差
 
 ### 利用するデータ1
 
-まずはアヤメの花のデータである`iris`を用いる.
+引き続き`palmerpenguins`のデータを利用する
 
 ```{r}
-str(iris)
+library(pacman)
+p_load(palmerpenguins)
+str(penguins)
 ```
 
 ### 算術平均
 
 算術平均を算出する関数として`mean()`関数がある.
+`penguins`のデータには欠測値があるので, `na.rm = TRUE`を引数に追加する.
+
 データフレームを直接引数として取ることはできない.
 小数点以下の値を丸めるには`round()`関数を利用する.
 第2引数で小数点以下何桁表示するかを与える.
 
 ```{r}
-mean(iris$Sepal.Length)
-round(mean(iris$Sepal.Length), 2)
+mean(penguins$bill_length_mm, na.rm = TRUE)
+round(mean(penguins$bill_length_mm, na.rm = TRUE), 2)
 ```
 
 ### `summary()`関数を用いて平均を求める
@@ -45,8 +37,8 @@ round(mean(iris$Sepal.Length), 2)
 `summary()`関数はベクトルでもデータフレームでも良い.
 
 ```{r}
-summary(iris$Sepal.Length)
-summary(iris)
+summary(penguins$bill_length_mm)
+summary(penguins)
 ```
 
 ### ヒストグラムに算術平均を加える
@@ -58,14 +50,17 @@ summary(iris)
 
 ```{r}
 p_load(ggplot2)
-ggplot(iris) +
-  aes(x = Sepal.Length) +
+ggplot(penguins) +
+  aes(x = bill_length_mm) +
   geom_histogram() +
   geom_vline(
     xintercept = 
-      mean(iris$Sepal.Length),
+      mean(penguins$bill_length_mm,
+           na.rm = TRUE
+      ),
     linetype = "dashed",
-    colour   = "red")
+    colour   = "red"
+  )
 ```
 
 ### 算術平均からの偏差の和
@@ -74,7 +69,13 @@ ggplot(iris) +
 数値計算上, 割り切れない場合はごく小さい値が算出されることもあることに注意.
 
 ```{r}
-sum(iris$Sepal.Length - mean(iris$Sepal.Length))
+sum(
+  penguins$bill_length_mm -
+    mean(penguins$bill_length_mm,
+         na.rm = TRUE
+    ),
+  na.rm = TRUE
+)
 ```
 
 ### 標本分散
@@ -83,7 +84,14 @@ sum(iris$Sepal.Length - mean(iris$Sepal.Length))
 Rにデフォルトで搭載されている`var()`関数は標本分散ではない(以降扱う不偏分散($n$ではなく, $n-1$で除す)).
 
 ```{r}
-mean((iris$Sepal.Length - mean(iris$Sepal.Length))^2)
+mean(
+  (penguins$bill_length_mm -
+    mean(penguins$bill_length_mm,
+      na.rm = TRUE
+    )
+  )^2,
+  na.rm = TRUE
+)
 ```
 
 ### 不偏分散
@@ -91,7 +99,8 @@ mean((iris$Sepal.Length - mean(iris$Sepal.Length))^2)
 不偏分散を求めるには`var()`関数を用いる.
 
 ```{r}
-var(iris$Sepal.Length)
+var(penguins$bill_length_mm,
+    na.rm = TRUE)
 ```
 
 ### 標本分散を見やすくコーディングする(応用)
@@ -100,12 +109,14 @@ var(iris$Sepal.Length)
 
 ```{r}
 p_load(magrittr)
-iris %$% 
-  subtract(Sepal.Length,
-           Sepal.Length |> 
-             mean()) |> 
-  raise_to_power(2) |> 
-  mean()
+penguins %$%
+  subtract(
+    bill_length_mm,
+    bill_length_mm |>
+      mean(na.rm = TRUE)
+  ) |>
+  raise_to_power(2) |>
+  mean(na.rm = TRUE)
 ```
 
 ### 標本分散の関数化
@@ -113,14 +124,16 @@ iris %$%
 以降利用しやすいように標本分散を関数にする.
 
 ```{r}
-svar <- function(x){
-  subtract(x,
-           x |> 
-             mean()) |> 
-    raise_to_power(2) |> 
-    mean()
+sample_var <- function(x) {
+  subtract(
+    x,
+    x |>
+      mean(na.rm = TRUE)
+  ) |>
+    raise_to_power(2) |>
+    mean(na.rm = TRUE)
 }
-svar(iris$Sepal.Length)
+sample_var(penguins$bill_length_mm)
 ```
 
 ### 標本標準偏差
@@ -129,7 +142,16 @@ svar(iris$Sepal.Length)
 Rにデフォルトで搭載されている`sd()`関数は標本標準偏差ではない(以降扱う不偏分散の平方根).
 
 ```{r}
-sqrt(mean((iris$Sepal.Length - mean(iris$Sepal.Length))^2))
+sqrt(
+  mean(
+    (penguins$bill_length_mm - 
+      mean(penguins$bill_length_mm,
+           na.rm = TRUE
+           )
+      )^2,
+      na.rm = TRUE
+  )
+)
 ```
 
 ### 不偏分散の平方根
@@ -138,7 +160,8 @@ sqrt(mean((iris$Sepal.Length - mean(iris$Sepal.Length))^2))
 不偏分散の平方根は不偏性を持っていないことに注意.
 
 ```{r}
-sd(iris$Sepal.Length)
+sd(penguins$bill_length_mm,
+   na.rm = TRUE)
 ```
 
 ### 標本標準偏差を見やすくコーディングする(応用)
@@ -146,12 +169,12 @@ sd(iris$Sepal.Length)
 パイプ演算子を利用するとコードが読みやすくなる.
 
 ```{r}
-iris %$% 
-  subtract(Sepal.Length,
-           Sepal.Length |> 
-             mean()) |> 
+penguins %$% 
+  subtract(bill_length_mm,
+           bill_length_mm |> 
+             mean(na.rm = TRUE)) |> 
   raise_to_power(2) |> 
-  mean() |> 
+  mean(na.rm = TRUE) |> 
   sqrt()
 ```
 
@@ -160,15 +183,15 @@ iris %$%
 以降利用しやすいように標本標準偏差を関数にする.
 
 ```{r}
-ssd <- function(x){
+sample_sd <- function(x){
   subtract(x,
            x |> 
-             mean()) |> 
-    raise_to_power(2) |> 
-    mean() |> 
+             mean(na.rm = TRUE)) |> 
+    raise_to_power(2) |>  
+    mean(na.rm = TRUE) |> 
     sqrt()
 }
-ssd(iris$Sepal.Length)
+sample_sd(penguins$bill_length_mm)
 ```
 
 ### データの標準化
@@ -177,7 +200,7 @@ ssd(iris$Sepal.Length)
 出力結果は少し厄介.
 
 ```{r}
-head(scale(iris$Sepal.Length))
+head(scale(penguins$bill_length_mm))
 ```
 
 ## 大数の弱法則と中心極限定理
@@ -228,9 +251,9 @@ summary(diamonds)
 後で利用するために母平均もオブジェクトに格納する.
 
 ```{r}
-var_pop <- svar(diamonds$price)
+var_pop  <- sample_var(diamonds$price)
 var_pop
-sd_pop <- ssd(diamonds$price)
+sd_pop   <- sample_sd(diamonds$price)
 sd_pop
 mean_pop <- mean(diamonds$price)
 mean_pop
@@ -258,10 +281,14 @@ ggplot(data = diamonds) +
 
 ```{r}
 p_load(withr)
-ss <- withr::with_seed(2718,
-                       dplyr::slice_sample(diamonds, 
-                                           n       = 100, 
-                                           replace = FALSE))
+ss <- withr::with_seed(
+  2718,
+  dplyr::slice_sample(
+    diamonds, 
+    n       = 100, 
+    replace = FALSE
+    )
+  )
 ```
 
 ### 標本の概要を確認
@@ -279,7 +306,7 @@ summary(ss)
 ```{r}
 mean(ss$price)
 mean_pop
-svar(ss$price)
+sample_var(ss$price)
 var_pop
 ```
 
@@ -304,11 +331,17 @@ ggplot(data = ss) +
 
 ```{r}
 p_load(purrr)
-ms <- with_seed(2718,
-                purrr::map(1:1000,
-                           ~ slice_sample(diamonds,
-                                          n       = 500,
-                                          replace = FALSE)))
+ms <- with_seed(
+  2718,
+  purrr::map(
+    1:1000,
+    \(x) slice_sample(
+      diamonds,
+      n       = 500,
+      replace = FALSE
+      )
+    )
+  )
 ```
 
 ### 各標本の標本平均を求める
@@ -318,9 +351,11 @@ ms <- with_seed(2718,
 最後に結果のリストを`list_rbind()`関数を利用して, 各標本の平均を1つのデータフレームに縦方向に整理する.
 
 ```{r}
-ms_mean <- purrr::map(ms, 
-                      dplyr::summarise,
-                      sample_mean = mean(price)) |> 
+ms_mean <- purrr::map(
+  ms, 
+  dplyr::summarise,
+  sample_mean = mean(price)
+  ) |> 
   list_rbind()
 ```
 
@@ -340,7 +375,7 @@ mean_pop
 標本平均の分散は$\frac{\sigma^2}{n}$と近似する.
 
 ```{r}
-svar(ms_mean$sample_mean)
+sample_var(ms_mean$sample_mean)
 var_pop / 500
 ```
 
@@ -355,7 +390,8 @@ ggplot(data = ms_mean) +
   geom_histogram(
     aes(y = after_stat(density)),
     fill  = "blue",
-    alpha = 0.2) +
+    alpha = 0.2
+    ) +
   geom_density(fill  = "blue") +
   geom_vline(xintercept = mean_pop) +
   stat_function(
@@ -363,7 +399,8 @@ ggplot(data = ms_mean) +
     args = list(
       mean = mean_pop,
       sd   = sqrt(var_pop / 500)),
-    size = 2)
+    size = 2
+    )
 ```
 
 ## 信頼区間
@@ -394,11 +431,10 @@ ms_ci <- map(
 ここでは, さらに`dplyr`パッケージの`if_else()`関数を利用して, 信頼区間の下限より大きく, 上限より小さい場合に1, そうでない場合に0を格納するように指示している.
 
 ```{r}
-ci_TF <- dplyr::mutate(ms_ci, 
-                       TF = if_else(
-                         lowerCI <= mean_pop &
-                             upperCI >= mean_pop, 
-                         1L, 0L))
+ci_TF <- dplyr::mutate(
+  ms_ci, 
+  TF = lowerCI <= mean_pop & upperCI >= mean_pop
+  )
 ```
 
 ### 信頼区間にパラメーターが含まれる割合
