@@ -99,9 +99,8 @@ t分布を描いて直感的にp値を捉える.
 ```{r}
 p_load(ggplot2)
 ggplot(data = NULL) +
-  aes(xmin = -30,
-      xmax = 30) +
-  stat_function(fun  = dt,
+  xlim(-30, 30) +
+  geom_function(fun  = dt,
                 args = list(df = 16)) +
   geom_vline(xintercept = 24) +
   geom_vline(xintercept = -24)
@@ -278,8 +277,8 @@ sample_lm2 |>
 sim_data <- with_seed(
   2718,
   map(1:1000,
-      ~ slice_sample(pop,
-                     n = 300)) |> 
+      \(x) slice_sample(pop,
+                        n = 300)) |> 
     map(\(data) lm(y ~ x, data = data)) |>
     purrr::set_names(1:1000) |> 
     map(\(result) confint(result,
@@ -288,10 +287,8 @@ sim_data <- with_seed(
     list_rbind() |> 
     rename(low = 1, high = 2) |> 
     mutate(estimate = (low + high) / 2) |> 
-    mutate(TF = if_else(
-      low < pop_lm$coefficients[2] &
-        high > pop_lm$coefficients[2],
-      1, 0)))
+    mutate(TF = low < pop_lm$coefficients[2] &
+            high > pop_lm$coefficients[2])) 
 ```
 
 ### 真値を含む割合
