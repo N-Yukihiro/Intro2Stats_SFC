@@ -85,27 +85,31 @@ pbinom(q = 1, size = 100, prob = 0.005, lower.tail = FALSE)
 
 ```{r}
 library(pacman)
-p_load(ggplot2)
-ggplot(data = NULL) +
-  aes(xmin = 0,
-      xmax = 5) +
+pacman::p_load(ggplot2)
+ggplot() +
+  xlim(0, 5) +
   stat_function(
-    fun  = dbinom,
-    args = list(size = 100,
-                prob = 0.005),
-    geom = "bar")
+    fun   = dbinom,
+    n     = 6,
+    args  = list(size = 100,
+                 prob = 0.005),
+    na.rm = TRUE,
+    geom  = "bar"
+    )
 ```
 
 コインを10回投げ, 10回表が向いた時にコインが表を向く確率を描画する.
 
 ```{r}
-ggplot(data = NULL) +
-  aes(xmin = 0,
-      xmax = 1) +
+ggplot() +
+  xlim(0, 1) +
   stat_function(
     fun  = dbinom,
-    args = list(x    = 10, 
-                size = 10))
+    args = list(
+      x    = 10,
+      size = 10
+    )
+  )
 ```
 
 ## 正規分布
@@ -130,10 +134,11 @@ dnorm(x = 0)
 正規分布を描画するには, `stat_function()`関数の引数として`fun = dnorm`を指定する.
 
 ```{r}
-ggplot(data = NULL) +
-  aes(xmin = -4,
-      xmax = 4) +
-  stat_function(fun = dnorm)
+ggplot() +
+  xlim(-4, 4) +
+  geom_function(
+    fun = dnorm
+  )
 ```
 
 ### 正規分布の確率密度関数と平均
@@ -142,15 +147,16 @@ ggplot(data = NULL) +
 形は変えずに1だけ右に移動したグラフとなっていることがわかる.
 
 ```{r}
-ggplot(data = NULL) +
-  aes(xmin = -4, 
-      xmax = 5) +
-  stat_function(
-    fun      = dnorm, 
-    linetype = "dashed") +
-  stat_function(
-    fun  = dnorm, 
-    args = list(mean = 1))
+ggplot() +
+  xlim(-4, 5) +
+  geom_function(
+    fun      = dnorm,
+    linetype = "dashed"
+  ) +
+  geom_function(
+    fun  = dnorm,
+    args = list(mean = 1)
+  )
 ```
 
 ### 正規分布の確率密度関数と標準偏差
@@ -159,15 +165,16 @@ ggplot(data = NULL) +
 位置は変えずによりシャープなグラフとなっていることがわかる.
 
 ```{r}
-ggplot(data = NULL) +
-  aes(xmin = -4, 
-      xmax = 4) +
-  stat_function(
-    fun      = dnorm, 
-    linetype = "dashed") +
-  stat_function(
-    fun  = dnorm, 
-    args = list(sd = 0.5))
+ggplot() +
+  xlim(-4, 4) +
+  geom_function(
+    fun      = dnorm,
+    linetype = "dashed"
+  ) +
+  geom_function(
+    fun  = dnorm,
+    args = list(sd = 0.5)
+  )
 ```
 
 ### $\pm 2 \sigma$ 区間の描画
@@ -177,9 +184,8 @@ ggplot(data = NULL) +
 ```{r}
 p_load(tibble)
 ggplot(data = NULL) +
-  aes(xmin = -4, 
-      xmax = 4) +
-  stat_function(fun = dnorm) +
+  xlim(-4, 4) +
+  geom_function(fun = dnorm) +
   geom_ribbon(
     data = tibble(
       X = seq(-2, 2, len = 1000),
@@ -188,7 +194,7 @@ ggplot(data = NULL) +
     fill = "#001E62") +
   geom_ribbon(
     data = tibble(
-      X = seq(-1, 1, len = 1000),
+      X = seq(-1, 1,len = 1000),
       Y = dnorm(X)),
     aes(x = X, ymin = 0, ymax = Y),
     fill = "#C63527")
@@ -200,23 +206,27 @@ ggplot(data = NULL) +
 p_load(tidyr)
 par <- expand_grid(
   mean = c(-2, 0, 2),
-  sd   = c(.5, 1, 2))
-ggplot(data = NULL) +
-  aes(xmin = -6,
-      xmax = 6) +
+  sd   = c(.5, 1, 2)
+)
+ggplot() +
+  xlim(-6, 6) +
   mapply(
-    function(mean, sd, co){
-      stat_function(
-        fun  = dnorm,
-        args = list(mean = mean,
-                    sd   = sd),
-        aes_q(colour = co))
-      },
-    par$mean, 
-    par$sd, 
-    sprintf("mean=%.0f sd=%.1f", 
-            par$mean, par$sd)
+    \(mean, sd, colour)
+    geom_function(
+      fun  = dnorm,
+      args = list(
+        mean = mean,
+        sd = sd
+      ),
+      aes(colour = colour)
+    ),
+    par$mean,
+    par$sd,
+    sprintf(
+      "mean=%.0f sd=%.1f",
+      par$mean,  par$sd
     )
+  )
 ```
 
 ### 正規分布の累積分布
@@ -228,16 +238,70 @@ $\Phi(-1.96)$を求める.
 pnorm(q = -1.96)
 ```
 
+### 定義に従って標準正規分布の累積分布を求める(Advanced)
+
+まず, 標準正規分布の確率密度関数を関数として定義する.
+`function(x){}`で関数を定義する.
+`(x)`が定義した関数が取る引数である.
+`{}`内に関数の定義を記述する.
+
+```{r}
+ f <- function(x){
+   1 / sqrt(2 * pi) * exp(-x^2 / 2)
+ } 
+```
+
+次に, 数値積分を行う`integrate()`関数を利用して積分を行い累積分布を求める.
+第2引数で下端, 第3引数で上端を指定する.
+定義した関数`f()`の`x`を指定している.
+
+```{r}
+integrate(f, -1.96, 1.96)
+```
+
+### 数値積分(Advanced)
+
+1変数関数の積分の近似解を求める.
+リーマン積分の考え方に準じて数値積分を行う関数を作成する.
+
+```{r}
+approx_integration <- 
+  function(fun, from, to, length = 1000) {
+    x_range <- seq(from       = from,
+                   to         = to,
+                   length.out = length)
+    delta   <- x_range[2] - x_range[1]
+
+    result <- 0
+    for(i in 1:(length - 1)) {
+      result <- result + fun(x_range[i]) * delta
+    }
+    return(result)
+  }
+```
+
+### 数値積分の実行(Advanced)
+
+積分する区間を等間隔に分け、関数を実行する.
+
+```{r}
+approx_integration(fun    = f, 
+                   from   = -1.96,
+                   to     = 1.96,
+                   length = 1000)
+```
+
+
 ### 正規分布の累積分布関数とグラフ
 
 累積分布関数を描画するには`stat_function()`関数の引数で`fun = pnorm`を指定する.
 
 ```{r}
-ggplot(data = NULL) +
-  aes(xmin = -3, 
-      xmax = 3) +
-  stat_function(
-    fun = pnorm)
+ggplot() +
+  xlim(-3, 3) +
+  geom_function(
+    fun = pnorm
+  )
 ```
 
 ### 正規分布の確率点
@@ -249,6 +313,22 @@ ggplot(data = NULL) +
 qnorm(p = 0.025, mean = 0, sd = 1)
 ```
 
+### 確率密度関数と確率点
+
+正規分布の確率密度関数のグラフに確率点を求めて線を引く.
+まず`dnorm()`関数で標準正規分布のグラフを描き, その上に`geom_vline()`関数で縦線を引く.
+引数の`xintercept`で確率点を求める`qnorm()`関数を利用する.
+
+```{r}
+ggplot() +
+  xlim(-3, 3) +
+  geom_function(
+    fun = dnorm) +
+  geom_vline(
+    xintercept = qnorm(p = 0.025),
+    colour     = "red")
+```
+
 ## 一様分布
 
 ### 一様分布の確率密度関数とグラフ
@@ -257,10 +337,9 @@ qnorm(p = 0.025, mean = 0, sd = 1)
 `dunif`関数で最小値と最大値を指定する.
 
 ```{r}
-ggplot(data = NULL) +
-  aes(xmin = -4,
-      xmax = 4) +
-  stat_function(
+ggplot() +
+  xlim(-4, 4) +
+  geom_function(
     fun  = dunif, 
     args = list(min = -3, 
                 max = 3))
@@ -273,9 +352,8 @@ ggplot(data = NULL) +
 単位時間あたりの事象の平均回数が3のポアソン分布を描画する.
 
 ```{r}
-ggplot(data = NULL) +
-  aes(xmin = 0, 
-      xmax = 10) +
+ggplot() +
+  xlim(0, 10) +
   stat_function(
     fun  = dpois,
     n    = 11,
@@ -286,20 +364,20 @@ ggplot(data = NULL) +
 
 ```{r}
 par <- tibble(lambda = 1:9)
-ggplot(data = NULL) +
-  aes(xmin = 0, 
-      xmax = 20) +
+ggplot() +
+  xlim(0, 20) +
   mapply(
-    function(lambda, co){
-      stat_function(
+    \(lambda, colour) {
+      geom_function(
         fun  = dpois,
         n    = 21,
         args = list(lambda = lambda),
-        aes_q(colour = co))
-      },
+        aes(colour = colour)
+      )
+    },
     par$lambda,
-    sprintf("lambda=%.0f",
-            par$lambda))
+    sprintf("lambda=%.0f", par$lambda)
+  )
 ```
 
 ## 負の二項分布
@@ -309,10 +387,9 @@ ggplot(data = NULL) +
 成功回数3, 成功確率0.5の負の二項分布を描画する.
 
 ```{r}
-ggplot(data = NULL) +
-  aes(xmin = 0,
-      xmax = 8) +
-  stat_function(
+ggplot() +
+  xlim(0, 8) +
+  geom_function(
     fun  = dnbinom,
     n    = 9,
     args = list(size = 3,
@@ -325,22 +402,21 @@ ggplot(data = NULL) +
 par <- expand_grid(
   size = c(3, 5), 
   prob = c(.2, .5, .8))
-ggplot(data = NULL) +
-  aes(xmin = 0, 
-      xmax = 15) +
+ggplot() +
+  xlim(0, 15) +
   mapply(
-    function(size, prob, co){
-      stat_function(
+    \(size, prob, colour) {
+      geom_function(
         fun  = dnbinom, 
         n    = 16,
         args = list(size = size,
                     prob = prob),
-        aes_q(colour = co))
+        aes(colour = colour))
       },
-    par$size,
-    par$prob,
+    par$size, par$prob,
     sprintf("size=%.0f prob=%.1f", 
-            par$size, par$prob))
+            par$size,  par$prob)
+  )
 ```
 
 ## 指数分布
@@ -349,10 +425,9 @@ ggplot(data = NULL) +
 $\lambda$が1のときの指数分布を描画する.
 
 ```{r}
-ggplot(data = NULL) +
-  aes(xmin = 0, 
-      xmax = 5) +
-  stat_function(
+ggplot() +
+  xlim(0, 5) +
+  geom_function(
     fun  = dexp,
     args = list(rate = 1))
 ```
@@ -363,20 +438,20 @@ ggplot(data = NULL) +
 ```{r}
 par <- tibble(
   rate = c(0.5, 1, 2))
-ggplot(data = NULL) +
-  aes(xmin = 0, 
-      xmax = 7) +
+ggplot() +
+  xlim(0,  7) +
   mapply(
-    function(rate, co){
-      stat_function(
+    \(rate, colour) {
+      geom_function(
         fun  = dexp,
         n    = 8,
         args = list(rate = rate),
-        aes_q(colour = co))
+        aes(colour = colour))
       },
     par$rate, 
     sprintf("rate=%.0f",
-            par$rate))
+            par$rate)
+  )
 ```
 
 ## ベータ分布
@@ -385,10 +460,9 @@ ggplot(data = NULL) +
 $\alpha = 3$で$\beta = 2$の時のベータ分布を描画する.
 
 ```{r}
-ggplot(data = NULL) +
-  aes(xmin = 0, 
-      xmax = 1) +
-  stat_function(
+ggplot() +
+  xlim(0, 1) +
+  geom_function(
     fun  = dbeta, 
     args = list(shape1 = 3, 
                 shape2 = 2))
@@ -398,22 +472,22 @@ ggplot(data = NULL) +
 
 ```{r}
 par <- expand_grid(
-  shape1 = c(.5,  1, 3),
+  shape1 = c(.5, 1, 3),
   shape2 = c(.5, 1, 3))
-ggplot(data = NULL) +
-  aes(xmin = 0,
-      xmax = 1) +
+ggplot() +
+  xlim(0, 1) +
   mapply(
-    function(shape1, shape2, co){
-      stat_function(
+    \(shape1, shape2, colour) {
+      geom_function(
         fun  = dbeta,
         args = list(shape1 = shape1, 
                     shape2 = shape2),
-        aes_q(colour = co))
+        aes(colour = colour))
       },
     par$shape1, par$shape2,
     sprintf("shape1=%.1f shape2=%.1f", 
-            par$shape1, par$shape2))
+            par$shape1,  par$shape2)
+  )
 ```
 
 
@@ -423,10 +497,9 @@ ggplot(data = NULL) +
 ガンマ分布を描画する.
 
 ```{r}
-ggplot(data = NULL) +
-  aes(xmin = 0,
-      xmax = 6) +
-  stat_function(
+ggplot() +
+  xlim(0, 6) +
+  geom_function(
     fun  = dgamma,
     args = list(shape = 1,
                 rate  = 2))
@@ -438,20 +511,20 @@ ggplot(data = NULL) +
 par <- expand_grid(
   shape = c(1, 3), 
   rate  = c(.5, 1, 3))
-ggplot(data = NULL) +
-  aes(xmin = 0, 
-      xmax = 3) +
+ggplot() +
+  xlim(0, 3) +
   mapply(
-    function(shape, rate, co){
-      stat_function(
+    \(shape, rate, colour){
+      geom_function(
         fun  = dgamma,
         args = list(shape = shape,
                     rate  = rate),
-        aes_q(colour = co))
+        aes(colour = colour))
       },
     par$shape, par$rate, 
     sprintf("shape=%.1f rate=%.1f",
-            par$shape, par$rate))
+            par$shape,  par$rate)
+  )
 ```
 
 ## $\chi ^2$分布
@@ -460,10 +533,9 @@ ggplot(data = NULL) +
 $\chi^2$分布を描画する.
 
 ```{r}
-ggplot(data = NULL) +
-  aes(xmin = 0, 
-      xmax = 6) +
-  stat_function(
+ggplot() +
+  xlim(0, 6) +
+  geom_function(
     fun  = dchisq, 
     args = list(df = 3))
 ```
@@ -473,15 +545,15 @@ ggplot(data = NULL) +
 ```{r}
 par <- tibble(df = c(1, 3, 5))
 ggplot(data = NULL) +
-  aes(xmin = 0,
-      xmax = 10) +
+  xlim(0, 10) +
   mapply(
-    function(df, co){
-      stat_function(
+    \(df, colour){
+      geom_function(
         fun  = dchisq,
         args = list(df = df),
-        aes_q(colour = co))
+        aes(colour = colour))
       },
     par$df,
-    sprintf("df=%.1f", par$df))
+    sprintf("df=%.1f", par$df)
+  )
 ```
