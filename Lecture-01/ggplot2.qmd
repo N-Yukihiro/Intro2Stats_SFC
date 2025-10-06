@@ -1,6 +1,6 @@
 ---
 title: "ggplot2 パッケージによる作図入門"
-format: ipynb
+format: html
 ---
 
 ### 重ね書きのイメージ

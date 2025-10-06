@@ -14,8 +14,8 @@ format: html
 
 ```{r}
 library(pacman)
-p_load(readr, here)
-kakei <- readr::read_csv(here("data", "kakei201709_l18.csv"))
+p_load(readr)
+kakei <- readr::read_csv("../data/kakei201709_l18.csv")
 ```
 
 ### 回帰分析の実行

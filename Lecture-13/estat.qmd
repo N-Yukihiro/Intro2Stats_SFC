@@ -38,10 +38,13 @@ XML, JSON, CSVなどによってデータが提供される.
 
 ### appIdの利用
 
-まず, e-statで先ほど作成したIDを変数として格納する.
+まず, e-statで先ほど作成したIDを`.env`ファイルに保存し, `dotenv`パッケージを利用して読み込む.
 
 ```{r}
-appId <- "各自のappId"
+library(pacman)
+p_load(dotenv)
+dotenv::load_dot_env()
+appId <- Sys.getenv("appId")
 ```
 
 ### 統計表情報取得(`estat_getStatsList`)
@@ -52,7 +55,6 @@ appId <- "各自のappId"
 検索する際には, `View`を用いて視覚的に探しても良いし, `dplyr::filter`などを利用しても良い.
 
 ```{r}
-library(pacman)
 p_load(estatapi, dplyr)
 estat_getStatsList(appId      = appId,
                    searchWord = "人口") |> 
@@ -109,7 +111,14 @@ df <- estat_getStatsData(
 列を選択するには, `dplyr::select`を利用する.
 
 ```{r}
-df <- dplyr::select(df, 5, 6, 9, 10, 14)
+selected_df <- dplyr::select(
+  df,
+  area_code,
+  pref = `全国・都道府県`,
+  time_code,
+  cat02_code, 
+  value
+)
 ```
 
 ### 行の選択
@@ -118,15 +127,15 @@ df <- dplyr::select(df, 5, 6, 9, 10, 14)
 データを取り除くには`dplyr::filter`を利用する.
 
 ```{r}
-df <- dplyr::filter(df, area_code != "00000") |> 
-  filter(time_code == "1301")
+filtered_df <- dplyr::filter(selected_df, area_code != "00000") |> 
+  dplyr::filter(time_code == "1301")
 ```
 
 人口総数のデータと5歳階級別65歳以上人口のデータに分ける.
 
 ```{r}
-df_all <- dplyr::filter(df, cat02_code == "01000")
-df_65  <- dplyr::filter(df, cat02_code != "01000")
+df_all <- dplyr::filter(filtered_df, cat02_code == "01000")
+df_65  <- dplyr::filter(filtered_df, cat02_code != "01000")
 ```
 
 ### データの集約
@@ -134,7 +143,7 @@ df_65  <- dplyr::filter(df, cat02_code != "01000")
 5歳階級別65歳以上人口のデータから都道府県別65歳以上人口の合計を求める.
 
 ```{r}
-df_65 <- df_65 |> 
+df_65_aggregated <- df_65 |> 
   dplyr::group_by(area_code) |> 
   dplyr::summarise(pop_65 = sum(value))
 ```
@@ -144,8 +153,8 @@ df_65 <- df_65 |>
 データフレーム同士を列をキーにして結合するには, `dplyr::left_join`を利用する.
 
 ```{r}
-df2 <- dplyr::left_join(df_all, df_65,
-                        key = "area_code")
+df2 <- dplyr::left_join(df_all, df_65_aggregated,
+                        by = "area_code")
 ```
 
 ### 新しい列の作成
@@ -154,8 +163,8 @@ df2 <- dplyr::left_join(df_all, df_65,
 65歳以上人口と総人口から高齢化率を求める.
 
 ```{r}
-df2 <- mutate(df2, 
-              aged_ratio = pop_65 / value)
+df2 <- dplyr::mutate(df2, 
+                     aged_ratio = pop_65 / value)
 ```
 
 # 分析
@@ -180,6 +189,7 @@ ggplot(df2) +
   aes(x = value,
       y = aged_ratio) +
   geom_point()
+  # geom_text(aes(label = pref), size = 3)
 ```
 
 ### 回帰分析
@@ -248,9 +258,8 @@ df_limit <- estat_getStatsData(
 問題があれば読み込みで対処する.
 
 ```{r}
-p_load(readxl, here)
-df_xl <- readxl::read_excel(here("data",
-                                 "a01000.xls"),
+p_load(readxl)
+df_xl <- readxl::read_excel("../data/a01000.xls",
                             skip = 2) |> 
   dplyr::select(-c(1:6))
 ```
